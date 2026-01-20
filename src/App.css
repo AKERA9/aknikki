@@ -1,15 +1,30 @@
-.aknikki-container { height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; }
-.aknikki-header { height: 50px; background: #1a1a1a; display: flex; align-items: center; justify-content: space-around; border-bottom: 1px solid #333; z-index: 10; }
-.aknikki-canvas-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; padding-bottom: 120px; }
-.canvas-wrapper { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.8); transition: all 0.3s ease; }
+:root { --primary-blue: #007bff; --bg-light: #ffffff; --border-gray: #e9ecef; --text-dark: #212529; }
+body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: var(--text-dark); }
+.aknikki-root { height: 100vh; display: flex; flex-direction: column; }
 
-.aknikki-drawer { position: absolute; bottom: 140px; width: 90%; background: #222; border-radius: 15px; padding: 15px; z-index: 20; max-height: 200px; overflow-y: auto; }
-.asset-grid { display: flex; gap: 10px; flex-wrap: wrap; }
-.asset-grid img { width: 60px; height: 60px; border-radius: 8px; cursor: pointer; }
+/* Header */
+.ak-header { height: 60px; background: white; border-bottom: 1px solid var(--border-gray); display: flex; align-items: center; justify-content: space-between; padding: 0 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.ak-logo { font-size: 24px; font-weight: bold; color: var(--primary-blue); }
+.ak-select { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-gray); }
+.ak-btn-blue { background: var(--primary-blue); color: white; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; }
 
-.aknikki-timeline { height: 100px; background: #111; border-top: 1px solid #333; padding: 5px; overflow-y: auto; margin-bottom: 60px; }
-.track { background: #222; margin: 2px 0; padding: 8px; font-size: 11px; border-radius: 4px; display: flex; justify-content: space-between; }
+/* Workspace */
+.ak-main { flex: 1; display: flex; position: relative; overflow: hidden; }
+.ak-sidebar { width: 80px; background: white; border-right: 1px solid var(--border-gray); display: flex; flex-direction: column; align-items: center; padding-top: 15px; }
+.ak-tool { padding: 15px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 11px; width: 100%; transition: 0.2s; }
+.ak-tool.active { color: var(--primary-blue); border-left: 3px solid var(--primary-blue); background: #f8f9ff; }
 
-.aknikki-bottom-menu { position: fixed; bottom: 0; width: 100%; height: 60px; background: #1a1a1a; display: flex; overflow-x: auto; align-items: center; border-top: 1px solid #333; padding: 0 10px; }
-.menu-item { min-width: 80px; text-align: center; cursor: pointer; color: #fff; font-size: 14px; }
-.search-bar { width: 100%; background: #333; border: none; color: white; padding: 8px; margin-bottom: 10px; border-radius: 5px; }
+/* Drawer */
+.ak-drawer { position: absolute; left: 81px; top: 0; bottom: 0; width: 280px; background: white; box-shadow: 10px 0 15px rgba(0,0,0,0.05); z-index: 50; padding: 15px; border-right: 1px solid var(--border-gray); }
+.ak-asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+.ak-asset-grid img { width: 100%; height: 100px; object-fit: contain; border: 1px solid #eee; border-radius: 8px; cursor: pointer; }
+
+/* Canvas Area */
+.ak-canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; padding: 20px; }
+.ak-canvas-wrapper { background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+
+/* Timeline */
+.ak-timeline { height: 200px; background: white; border-top: 1px solid var(--border-gray); padding: 15px; }
+.ak-timeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.ak-track { height: 40px; background: #f8f9fa; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; padding-left: 15px; border: 1px solid var(--border-gray); font-size: 13px; }
+.ak-keyframe-btn { background: #e7f1ff; color: var(--primary-blue); border: 1px solid var(--primary-blue); padding: 4px 10px; border-radius: 4px; cursor: pointer; }
