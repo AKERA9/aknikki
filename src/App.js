@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
 import useImage from 'use-image';
 import './App.css';
@@ -16,12 +16,13 @@ function App() {
 
   const assets = {
     bg: [
-      { id: 1, name: 'Nature', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=300&q=80' },
-      { id: 2, name: 'Space', url: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=300&q=80' }
+      { id: 1, url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&q=80' },
+      { id: 2, url: 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=400&q=80' }
     ],
     char: [
-      { id: 101, name: 'Lion', url: 'https://img.icons8.com/color/150/lion.png' },
-      { id: 102, name: 'Robot', url: 'https://img.icons8.com/color/150/robot-vacuum.png' }
+      { id: 101, url: 'https://img.icons8.com/color/200/lion.png' },
+      { id: 102, url: 'https://img.icons8.com/fluency/200/business-man.png' },
+      { id: 103, url: 'https://img.icons8.com/color/200/super-mario.png' }
     ]
   };
 
@@ -30,7 +31,7 @@ function App() {
     if (val === '16:9') setRatio({ w: 480, h: 270 });
     else if (val === '9:16') setRatio({ w: 270, h: 480 });
     else if (val === '4:5') setRatio({ w: 360, h: 450 });
-    else if (val === 'custom') setActiveDrawer('custom-size');
+    else if (val === 'custom') setActiveDrawer('custom');
   };
 
   const addItem = (url) => {
@@ -39,65 +40,79 @@ function App() {
   };
 
   return (
-    <div className="aknikki-container">
-      {/* Top Bar - Fixed */}
-      <header className="aknikki-header">
-        <div className="logo">Aknikki</div>
-        <select onChange={handleRatioChange}>
-          <option value="4:5">4:5 (Insta)</option>
-          <option value="16:9">16:9 (YouTube)</option>
-          <option value="9:16">9:16 (Reels)</option>
-          <option value="custom">Custom Size</option>
-        </select>
-        <button className="btn-save">Save</button>
+    <div className="aknikki-root">
+      {/* Top Header */}
+      <header className="ak-header">
+        <div className="ak-logo">Aknikki</div>
+        <div className="ak-controls">
+          <select onChange={handleRatioChange} className="ak-select">
+            <option value="4:5">4:5 (Insta)</option>
+            <option value="16:9">16:9 (YouTube)</option>
+            <option value="9:16">9:16 (Reels)</option>
+            <option value="custom">Custom Size</option>
+          </select>
+          <button className="ak-btn-blue">Export Video</button>
+        </div>
       </header>
 
-      {/* Main Workspace */}
-      <main className="aknikki-canvas-area">
-        <div className="canvas-wrapper" style={{ width: ratio.w, height: ratio.h }}>
-          <Stage width={ratio.w} height={ratio.h}>
-            <Layer>
-              <Rect width={ratio.w} height={ratio.h} fill="#fff" />
-              {elements.map((el) => <CanvasElement key={el.id} url={el.url} x={el.x} y={el.y} />)}
-            </Layer>
-          </Stage>
-        </div>
+      <div className="ak-main">
+        {/* Left Sidebar */}
+        <aside className="ak-sidebar">
+          <div className={`ak-tool ${activeDrawer === 'bg' ? 'active' : ''}`} onClick={() => setActiveDrawer('bg')}>🖼️<span>BG</span></div>
+          <div className={`ak-tool ${activeDrawer === 'char' ? 'active' : ''}`} onClick={() => setActiveDrawer('char')}>👤<span>Char</span></div>
+          <div className="ak-tool">🎵<span>Audio</span></div>
+          <div className="ak-tool">T<span>Text</span></div>
+        </aside>
 
-        {/* Floating Drawers */}
-        {activeDrawer && activeDrawer !== 'custom-size' && (
-          <div className="aknikki-drawer">
-            <input type="text" placeholder={`Search ${activeDrawer}...`} className="search-bar" />
-            <div className="asset-grid">
+        {/* Assets Drawer */}
+        {activeDrawer && activeDrawer !== 'custom' && (
+          <div className="ak-drawer">
+            <div className="drawer-header">
+              <h3>Select {activeDrawer}</h3>
+              <button onClick={() => setActiveDrawer(null)}>×</button>
+            </div>
+            <div className="ak-asset-grid">
               {assets[activeDrawer]?.map(item => (
-                <img key={item.id} src={item.url} alt={item.name} onClick={() => addItem(item.url)} />
+                <img key={item.id} src={item.url} onClick={() => addItem(item.url)} alt="asset" />
               ))}
             </div>
           </div>
         )}
 
-        {activeDrawer === 'custom-size' && (
-          <div className="aknikki-drawer custom-input">
-            <input type="number" placeholder="Width" onChange={(e) => setCustomSize({...customSize, w: e.target.value})} />
-            <input type="number" placeholder="Height" onChange={(e) => setCustomSize({...customSize, h: e.target.value})} />
-            <button onClick={() => { setRatio({w: Number(customSize.w), h: Number(customSize.h)}); setActiveDrawer(null); }}>Set Size</button>
+        {/* Custom Size Popup */}
+        {activeDrawer === 'custom' && (
+          <div className="ak-drawer custom-size-box">
+             <input type="number" placeholder="Width" onChange={(e)=>setCustomSize({...customSize, w: e.target.value})} />
+             <input type="number" placeholder="Height" onChange={(e)=>setCustomSize({...customSize, h: e.target.value})} />
+             <button onClick={()=>{setRatio({w:Number(customSize.w), h:Number(customSize.h)}); setActiveDrawer(null)}}>Apply</button>
           </div>
         )}
-      </main>
 
-      {/* Timeline Section */}
-      <div className="aknikki-timeline">
-        <div className="track">Track 1: Characters <button className="kf-btn">+ Keyframe</button></div>
-        <div className="track">Track 2: Backgrounds</div>
+        {/* Stage/Canvas */}
+        <section className="ak-canvas-container">
+          <div className="ak-canvas-wrapper" style={{ width: ratio.w, height: ratio.h }}>
+            <Stage width={ratio.w} height={ratio.h}>
+              <Layer>
+                <Rect width={ratio.w} height={ratio.h} fill="#f8f9fa" stroke="#dee2e6" strokeWidth={2} />
+                {elements.map((el) => <CanvasElement key={el.id} url={el.url} x={el.x} y={el.y} />)}
+              </Layer>
+            </Stage>
+          </div>
+        </section>
       </div>
 
-      {/* Bottom Menu - Fixed & Slideable */}
-      <nav className="aknikki-bottom-menu">
-        <div className="menu-item" onClick={() => setActiveDrawer('bg')}>🖼️ BG</div>
-        <div className="menu-item" onClick={() => setActiveDrawer('char')}>👤 Char</div>
-        <div className="menu-item">🎵 Audio</div>
-        <div className="menu-item">✏️ Text</div>
-        <div className="menu-item">✨ FX</div>
-      </nav>
+      {/* Timeline */}
+      <footer className="ak-timeline">
+        <div className="ak-timeline-header">
+          <span>00:00:00 / 00:00:06</span>
+          <div className="ak-playback">⏮ ⏸ ⏭</div>
+          <button className="ak-keyframe-btn">+ Keyframe</button>
+        </div>
+        <div className="ak-tracks">
+          <div className="ak-track">Track 1: Characters</div>
+          <div className="ak-track">Track 2: Backgrounds</div>
+        </div>
+      </footer>
     </div>
   );
 }
