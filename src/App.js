@@ -1,120 +1,140 @@
-import React, { useState } from 'react';
-import { Stage, Layer, Image as KonvaImage, Rect } from 'react-konva';
+import React, { useState, useRef } from 'react';
+import { Stage, Layer, Image as KonvaImage, Rect, Transformer } from 'react-konva';
 import useImage from 'use-image';
 import './App.css';
 
-const CanvasElement = ({ url, x, y }) => {
-  const [img] = useImage(url);
-  return <KonvaImage image={img} x={x} y={y} draggable />;
+const URLImage = ({ shapeProps, isSelected, onSelect, onChange }) => {
+  const [img] = useImage(shapeProps.url);
+  const shapeRef = useRef();
+  const trRef = useRef();
+
+  React.useEffect(() => {
+    if (isSelected) {
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
+  return (
+    <React.Fragment>
+      <KonvaImage
+        image={img}
+        onClick={onSelect}
+        onTap={onSelect}
+        ref={shapeRef}
+        {...shapeProps}
+        draggable
+        onDragEnd={(e) => {
+          onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() });
+        }}
+        onTransformEnd={() => {
+          const node = shapeRef.current;
+          onChange({
+            ...shapeProps,
+            x: node.x(),
+            y: node.y(),
+            scaleX: node.scaleX(),
+            scaleY: node.scaleY(),
+            rotation: node.rotation(),
+          });
+        }}
+      />
+      {isSelected && (
+        <Transformer
+          ref={trRef}
+          boundBoxFunc={(oldBox, newBox) => (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5 ? oldBox : newBox)}
+        />
+      )}
+    </React.Fragment>
+  );
 };
 
 function App() {
   const [elements, setElements] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
   const [activeDrawer, setActiveDrawer] = useState(null);
-  const [ratio, setRatio] = useState({ w: 360, h: 450 }); // Default 4:5
-  const [customSize, setCustomSize] = useState({ w: '', h: '' });
+  const [scale, setScale] = useState(1);
+  const [ratio, setRatio] = useState({ w: 360, h: 450 });
 
   const assets = {
-    bg: [
-      { id: 1, url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&q=80' },
-      { id: 2, url: 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=400&q=80' }
-    ],
-    char: [
-      { id: 101, url: 'https://img.icons8.com/color/200/lion.png' },
-      { id: 102, url: 'https://img.icons8.com/fluency/200/business-man.png' },
-      { id: 103, url: 'https://img.icons8.com/color/200/super-mario.png' }
-    ]
+    bg: ['https://images.unsplash.com/photo-1557683316-973673baf926?w=200', 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=200'],
+    char: ['https://img.icons8.com/color/200/lion.png', 'https://img.icons8.com/fluency/200/business-man.png']
   };
 
-  const handleRatioChange = (e) => {
-    const val = e.target.value;
-    if (val === '16:9') setRatio({ w: 480, h: 270 });
-    else if (val === '9:16') setRatio({ w: 270, h: 480 });
-    else if (val === '4:5') setRatio({ w: 360, h: 450 });
-    else if (val === 'custom') setActiveDrawer('custom');
-  };
-
-  const addItem = (url) => {
-    setElements([...elements, { id: Date.now(), url, x: 50, y: 50 }]);
+  const addItem = (url, type) => {
+    const id = `el-${Date.now()}`;
+    setElements([...elements, { id, url, type, x: 50, y: 50, start: 0, duration: 5, rotation: 0 }]);
     setActiveDrawer(null);
   };
 
+  const deleteElement = (id) => {
+    setElements(elements.filter(el => el.id !== id));
+    setSelectedId(null);
+  };
+
   return (
-    <div className="aknikki-root">
-      {/* Top Header */}
+    <div className="ak-root">
       <header className="ak-header">
         <div className="ak-logo">Aknikki</div>
-        <div className="ak-controls">
-          <select onChange={handleRatioChange} className="ak-select">
-            <option value="4:5">4:5 (Insta)</option>
-            <option value="16:9">16:9 (YouTube)</option>
-            <option value="9:16">9:16 (Reels)</option>
-            <option value="custom">Custom Size</option>
-          </select>
-          <button className="ak-btn-blue">Export Video</button>
-        </div>
+        <select onChange={(e) => setRatio(e.target.value === '16:9' ? {w:480,h:270} : {w:360,h:450})}>
+          <option value="4:5">4:5 Insta</option>
+          <option value="16:9">16:9 YT</option>
+        </select>
+        <button className="ak-btn-blue">Export</button>
       </header>
 
-      <div className="ak-main">
-        {/* Left Sidebar */}
-        <aside className="ak-sidebar">
-          <div className={`ak-tool ${activeDrawer === 'bg' ? 'active' : ''}`} onClick={() => setActiveDrawer('bg')}>🖼️<span>BG</span></div>
-          <div className={`ak-tool ${activeDrawer === 'char' ? 'active' : ''}`} onClick={() => setActiveDrawer('char')}>👤<span>Char</span></div>
-          <div className="ak-tool">🎵<span>Audio</span></div>
-          <div className="ak-tool">T<span>Text</span></div>
+      <div className="ak-body">
+        <aside className="ak-sidebar-pro">
+          <div className="tool-btn" onClick={() => setActiveDrawer(activeDrawer === 'bg' ? null : 'bg')}>🖼️ BG</div>
+          <div className="tool-btn" onClick={() => setActiveDrawer(activeDrawer === 'char' ? null : 'char')}>👤 Char</div>
+          <div className="tool-btn" onClick={() => deleteElement(selectedId)}>🗑️ Del</div>
         </aside>
 
-        {/* Assets Drawer */}
-        {activeDrawer && activeDrawer !== 'custom' && (
-          <div className="ak-drawer">
-            <div className="drawer-header">
-              <h3>Select {activeDrawer}</h3>
-              <button onClick={() => setActiveDrawer(null)}>×</button>
-            </div>
-            <div className="ak-asset-grid">
-              {assets[activeDrawer]?.map(item => (
-                <img key={item.id} src={item.url} onClick={() => addItem(item.url)} alt="asset" />
-              ))}
-            </div>
+        {/* Sliding Panel */}
+        <div className={`ak-slide-panel ${activeDrawer ? 'open' : ''}`}>
+          <div className="grid">
+            {assets[activeDrawer]?.map(url => <img src={url} key={url} onClick={() => addItem(url, activeDrawer)} alt="asset"/>)}
           </div>
-        )}
+        </div>
 
-        {/* Custom Size Popup */}
-        {activeDrawer === 'custom' && (
-          <div className="ak-drawer custom-size-box">
-             <input type="number" placeholder="Width" onChange={(e)=>setCustomSize({...customSize, w: e.target.value})} />
-             <input type="number" placeholder="Height" onChange={(e)=>setCustomSize({...customSize, h: e.target.value})} />
-             <button onClick={()=>{setRatio({w:Number(customSize.w), h:Number(customSize.h)}); setActiveDrawer(null)}}>Apply</button>
+        <main className="ak-viewport">
+          <div className="zoom-controls">
+            <button onClick={() => setScale(scale + 0.1)}>+</button>
+            <button onClick={() => setScale(scale - 0.1)}>-</button>
           </div>
-        )}
-
-        {/* Stage/Canvas */}
-        <section className="ak-canvas-container">
-          <div className="ak-canvas-wrapper" style={{ width: ratio.w, height: ratio.h }}>
-            <Stage width={ratio.w} height={ratio.h}>
+          <div className="canvas-holder" style={{ transform: `scale(${scale})` }}>
+            <Stage width={ratio.w} height={ratio.h} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
               <Layer>
-                <Rect width={ratio.w} height={ratio.h} fill="#f8f9fa" stroke="#dee2e6" strokeWidth={2} />
-                {elements.map((el) => <CanvasElement key={el.id} url={el.url} x={el.x} y={el.y} />)}
+                <Rect width={ratio.w} height={ratio.h} fill="#fff" stroke="#ccc"/>
+                {elements.map((el, i) => (
+                  <URLImage key={el.id} shapeProps={el} isSelected={el.id === selectedId} 
+                    onSelect={() => setSelectedId(el.id)}
+                    onChange={(newAttrs) => {
+                      const rects = elements.slice();
+                      rects[i] = newAttrs;
+                      setElements(rects);
+                    }}
+                  />
+                ))}
               </Layer>
             </Stage>
           </div>
-        </section>
+        </main>
       </div>
 
-      {/* Timeline */}
-      <footer className="ak-timeline">
-        <div className="ak-timeline-header">
-          <span>00:00:00 / 00:00:06</span>
-          <div className="ak-playback">⏮ ⏸ ⏭</div>
-          <button className="ak-keyframe-btn">+ Keyframe</button>
-        </div>
-        <div className="ak-tracks">
-          <div className="ak-track">Track 1: Characters</div>
-          <div className="ak-track">Track 2: Backgrounds</div>
-        </div>
+      <footer className="ak-timeline-v2">
+        {elements.map(el => (
+          <div key={el.id} className="timeline-layer">
+            <div className="layer-label">{el.type}</div>
+            <div className="layer-bar-bg">
+               <div className="layer-bar" style={{ left: el.start * 20, width: el.duration * 40 }}>
+                 {el.id === selectedId ? '● Active' : ''}
+               </div>
+            </div>
+          </div>
+        ))}
       </footer>
     </div>
   );
 }
-
 export default App;
