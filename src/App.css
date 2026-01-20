@@ -1,16 +1,15 @@
-body { margin: 0; font-family: sans-serif; overflow: hidden; }
-.aknikki-container { height: 100vh; display: flex; flex-direction: column; background: #000; color: #fff; }
-.aknikki-header { height: 50px; background: #1a1a1a; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #333; }
-.aknikki-workspace { flex: 1; display: flex; position: relative; }
-.aknikki-sidebar { width: 70px; background: #111; display: flex; flex-direction: column; gap: 20px; padding-top: 20px; align-items: center; border-right: 1px solid #333; }
-.tool { cursor: pointer; font-size: 14px; text-align: center; }
-.aknikki-drawer { position: absolute; left: 71px; top: 0; bottom: 0; width: 280px; background: #1a1a1a; z-index: 100; padding: 15px; border-right: 1px solid #444; }
-.drawer-header { display: flex; gap: 10px; margin-bottom: 20px; }
-.drawer-header input { flex: 1; background: #333; border: none; color: white; padding: 8px; border-radius: 4px; }
-.aknikki-canvas-area { flex: 1; display: flex; justify-content: center; align-items: center; background: #0c0c0c; }
-.main-stage { border-radius: 8px; overflow: hidden; }
-.aknikki-timeline { height: 220px; background: #111; border-top: 1px solid #333; padding: 10px; }
-.timeline-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: #aaa; font-size: 12px; }
-.track { background: #222; margin: 4px 0; padding: 12px; border-radius: 4px; font-size: 13px; display: flex; justify-content: space-between; }
-.kf-btn { background: #ff4757; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 10px; }
-.btn-save { background: #1e90ff; color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; }
+.aknikki-container { height: 100vh; display: flex; flex-direction: column; background: #000; overflow: hidden; }
+.aknikki-header { height: 50px; background: #1a1a1a; display: flex; align-items: center; justify-content: space-around; border-bottom: 1px solid #333; z-index: 10; }
+.aknikki-canvas-area { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; padding-bottom: 120px; }
+.canvas-wrapper { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.8); transition: all 0.3s ease; }
+
+.aknikki-drawer { position: absolute; bottom: 140px; width: 90%; background: #222; border-radius: 15px; padding: 15px; z-index: 20; max-height: 200px; overflow-y: auto; }
+.asset-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+.asset-grid img { width: 60px; height: 60px; border-radius: 8px; cursor: pointer; }
+
+.aknikki-timeline { height: 100px; background: #111; border-top: 1px solid #333; padding: 5px; overflow-y: auto; margin-bottom: 60px; }
+.track { background: #222; margin: 2px 0; padding: 8px; font-size: 11px; border-radius: 4px; display: flex; justify-content: space-between; }
+
+.aknikki-bottom-menu { position: fixed; bottom: 0; width: 100%; height: 60px; background: #1a1a1a; display: flex; overflow-x: auto; align-items: center; border-top: 1px solid #333; padding: 0 10px; }
+.menu-item { min-width: 80px; text-align: center; cursor: pointer; color: #fff; font-size: 14px; }
+.search-bar { width: 100%; background: #333; border: none; color: white; padding: 8px; margin-bottom: 10px; border-radius: 5px; }
