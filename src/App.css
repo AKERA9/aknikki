@@ -1,0 +1,16 @@
+body { margin: 0; font-family: sans-serif; overflow: hidden; }
+.aknikki-container { height: 100vh; display: flex; flex-direction: column; background: #000; color: #fff; }
+.aknikki-header { height: 50px; background: #1a1a1a; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #333; }
+.aknikki-workspace { flex: 1; display: flex; position: relative; }
+.aknikki-sidebar { width: 70px; background: #111; display: flex; flex-direction: column; gap: 20px; padding-top: 20px; align-items: center; border-right: 1px solid #333; }
+.tool { cursor: pointer; font-size: 14px; text-align: center; }
+.aknikki-drawer { position: absolute; left: 71px; top: 0; bottom: 0; width: 280px; background: #1a1a1a; z-index: 100; padding: 15px; border-right: 1px solid #444; }
+.drawer-header { display: flex; gap: 10px; margin-bottom: 20px; }
+.drawer-header input { flex: 1; background: #333; border: none; color: white; padding: 8px; border-radius: 4px; }
+.aknikki-canvas-area { flex: 1; display: flex; justify-content: center; align-items: center; background: #0c0c0c; }
+.main-stage { border-radius: 8px; overflow: hidden; }
+.aknikki-timeline { height: 220px; background: #111; border-top: 1px solid #333; padding: 10px; }
+.timeline-header { display: flex; justify-content: space-between; margin-bottom: 10px; color: #aaa; font-size: 12px; }
+.track { background: #222; margin: 4px 0; padding: 12px; border-radius: 4px; font-size: 13px; display: flex; justify-content: space-between; }
+.kf-btn { background: #ff4757; border: none; color: white; border-radius: 3px; cursor: pointer; font-size: 10px; }
+.btn-save { background: #1e90ff; color: white; border: none; padding: 6px 15px; border-radius: 20px; cursor: pointer; }
