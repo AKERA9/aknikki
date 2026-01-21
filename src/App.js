@@ -3,13 +3,23 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Group, Text } fro
 import useImage from 'use-image';
 import './App.css';
 
-const CanvasElement = ({ shapeProps, isSelected, onSelect, onChange, onDelete, onDuplicate }) => {
+// Context Menu Component for Objects
+const ObjectControl = ({ x, y, onDelete, onDuplicate }) => (
+  <Group x={x} y={y - 55}>
+    <Rect width={110} height={35} fill="white" cornerRadius={8} shadowBlur={10} shadowOpacity={0.1} />
+    <Text text="🗑️" x={12} y={10} onClick={onDelete} />
+    <Text text="📑" x={45} y={10} onClick={onDuplicate} />
+    <Text text="•••" x={78} y={10} />
+  </Group>
+);
+
+const CanvasItem = ({ shapeProps, isSelected, onSelect, onChange, onDelete, onDuplicate }) => {
   const [img] = useImage(shapeProps.url);
   const shapeRef = useRef();
   const trRef = useRef();
 
   useEffect(() => {
-    if (isSelected && trRef.current) {
+    if (isSelected) {
       trRef.current.nodes([shapeRef.current]);
       trRef.current.getLayer().batchDraw();
     }
@@ -20,22 +30,16 @@ const CanvasElement = ({ shapeProps, isSelected, onSelect, onChange, onDelete, o
       <KonvaImage
         image={img}
         onClick={onSelect}
-        onTap={onSelect}
         ref={shapeRef}
         {...shapeProps}
         draggable
-        onDragStart={() => onSelect()}
-        onDragEnd={(e) => {
-          onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() });
-        }}
+        onDragEnd={(e) => onChange({ ...shapeProps, x: e.target.x(), y: e.target.y() })}
         onTransformEnd={() => {
           const node = shapeRef.current;
           onChange({
             ...shapeProps,
-            x: node.x(),
-            y: node.y(),
-            scaleX: node.scaleX(),
-            scaleY: node.scaleY(),
+            x: node.x(), y: node.y(),
+            scaleX: node.scaleX(), scaleY: node.scaleY(),
             rotation: node.rotation(),
           });
         }}
@@ -43,102 +47,115 @@ const CanvasElement = ({ shapeProps, isSelected, onSelect, onChange, onDelete, o
       {isSelected && (
         <>
           <Transformer ref={trRef} boundBoxFunc={(oldBox, newBox) => Math.abs(newBox.width) < 5 ? oldBox : newBox} />
-          <Group x={shapeProps.x} y={shapeProps.y - 45}>
-            <Rect width={80} height={30} fill="white" cornerRadius={5} shadowBlur={10} shadowOpacity={0.2} />
-            <Text text="🗑️" x={10} y={8} onClick={onDelete} />
-            <Text text="📑" x={35} y={8} onClick={onDuplicate} />
-            <Text text="•••" x={60} y={8} />
-          </Group>
+          <ObjectControl x={shapeProps.x} y={shapeProps.y} onDelete={onDelete} onDuplicate={onDuplicate} />
         </>
       )}
     </React.Fragment>
   );
 };
 
-function App() {
+export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [activeDrawer, setActiveDrawer] = useState(null);
-  const [scale, setScale] = useState(1);
-  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
+  const [activePanel, setActivePanel] = useState(null);
+  const [zoom, setZoom] = useState(1);
   const [ratio, setRatio] = useState({ w: 360, h: 450 });
 
   const assets = {
-    bg: ['https://images.unsplash.com/photo-1557683316-973673baf926?w=400', 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=400'],
-    char: ['https://img.icons8.com/color/200/lion.png', 'https://img.icons8.com/fluency/200/business-man.png']
+    BG: ['https://images.unsplash.com/photo-1557683316-973673baf926?w=400', 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=400'],
+    Char: ['https://img.icons8.com/color/200/lion.png', 'https://img.icons8.com/fluency/200/business-man.png']
   };
 
   const addItem = (url, type) => {
     const id = `el-${Date.now()}`;
-    setElements([...elements, { id, url, type, x: 50, y: 50, start: 0, duration: 5, scaleX: 1, scaleY: 1, rotation: 0 }]);
-    setActiveDrawer(null);
+    setElements([...elements, { id, url, type, x: 50, y: 50, start: 0, duration: 5, rotation: 0, scaleX: 1, scaleY: 1 }]);
+    setActivePanel(null);
   };
 
   return (
-    <div className="ak-root">
-      <header className="ak-header">
-        <div className="ak-logo">Aknikki Pro</div>
-        <div className="header-actions">
-           <select className="ak-select" onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
-              <option value="4:5">4:5 Insta</option>
-              <option value="16:9">16:9 YouTube</option>
-           </select>
-           <button className="ak-btn-blue">Export</button>
+    <div className="aknikki-pro-root">
+      {/* Top Navbar */}
+      <header className="ak-top-nav">
+        <div className="ak-brand">Aknikki <span>Pro</span></div>
+        <div className="ak-nav-tools">
+          <select onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
+            <option value="4:5">4:5 Insta</option>
+            <option value="16:9">16:9 YouTube</option>
+          </select>
+          <button className="ak-export-btn">Export Video</button>
         </div>
       </header>
 
-      <div className="ak-body">
-        <aside className="ak-sidebar">
-          <div className={`tool-btn ${activeDrawer === 'bg' ? 'active' : ''}`} onClick={() => setActiveDrawer(activeDrawer === 'bg' ? null : 'bg')}>🖼️<span>BG</span></div>
-          <div className={`tool-btn ${activeDrawer === 'char' ? 'active' : ''}`} onClick={() => setActiveDrawer(activeDrawer === 'char' ? null : 'char')}>👤<span>Char</span></div>
+      <div className="ak-main-layout">
+        {/* Sidebar */}
+        <aside className="ak-side-menu">
+          <div className={`menu-item ${activePanel === 'BG' ? 'active' : ''}`} onClick={() => setActivePanel(activePanel === 'BG' ? null : 'BG')}>🖼️<span>Background</span></div>
+          <div className={`menu-item ${activePanel === 'Char' ? 'active' : ''}`} onClick={() => setActivePanel(activePanel === 'Char' ? null : 'Char')}>👤<span>Character</span></div>
+          <div className="menu-item">🎵<span>Audio</span></div>
+          <div className="menu-item">T<span>Text</span></div>
         </aside>
 
-        <div className={`ak-slide-panel ${activeDrawer ? 'open' : ''}`}>
-           <div className="panel-head"><h3>Select {activeDrawer}</h3><button onClick={() => setActiveDrawer(null)}>×</button></div>
-           <div className="asset-grid">
-              {assets[activeDrawer]?.map(url => <img src={url} key={url} onClick={() => addItem(url, activeDrawer)} />)}
-           </div>
+        {/* Sliding Side Panel */}
+        <div className={`ak-side-panel ${activePanel ? 'visible' : ''}`}>
+          <div className="panel-header">
+            <h3>Select {activePanel}</h3>
+            <button onClick={() => setActivePanel(null)}>×</button>
+          </div>
+          <div className="panel-content">
+            {assets[activePanel]?.map(url => (
+              <div key={url} className="asset-box" onClick={() => addItem(url, activePanel)}>
+                <img src={url} alt="asset" />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <main className="ak-viewport">
-          <div className="zoom-info">Zoom: {Math.round(scale * 100)}% | Drag Canvas Freely</div>
-          <Stage 
-            width={window.innerWidth} 
-            height={window.innerHeight - 250}
-            draggable={!selectedId} // Drag stage only when nothing is selected
-            x={stagePos.x} y={stagePos.y}
-            scaleX={scale} scaleY={scale}
-            onDragEnd={(e) => setStagePos({ x: e.target.x(), y: e.target.y() })}
-            onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}
-          >
-            <Layer>
-              <Rect width={ratio.w} height={ratio.h} fill="white" x={window.innerWidth / 4} y={50} shadowBlur={20} shadowOpacity={0.1} />
-              {elements.map((el, i) => (
-                <CanvasElement 
-                  key={el.id} 
-                  shapeProps={{...el, x: el.x + window.innerWidth / 4, y: el.y + 50}} 
-                  isSelected={el.id === selectedId}
-                  onSelect={() => setSelectedId(el.id)}
-                  onDelete={() => setElements(elements.filter(e => e.id !== el.id))}
-                  onDuplicate={() => setElements([...elements, {...el, id: `el-${Date.now()}`, x: el.x + 20, y: el.y + 20}])}
-                  onChange={(newAttrs) => {
-                    const items = elements.slice();
-                    items[i] = {...newAttrs, x: newAttrs.x - window.innerWidth / 4, y: newAttrs.y - 50};
-                    setElements(items);
-                  }}
-                />
-              ))}
-            </Layer>
-          </Stage>
+        {/* Center Canvas Area */}
+        <main className="ak-canvas-workspace">
+          <div className="canvas-container" style={{ transform: `scale(${zoom})` }}>
+            <Stage width={ratio.w} height={ratio.h} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
+              <Layer>
+                <Rect width={ratio.w} height={ratio.h} fill="#ffffff" shadowBlur={15} shadowOpacity={0.05} />
+                {elements.map((el, i) => (
+                  <CanvasItem 
+                    key={el.id} shapeProps={el} isSelected={el.id === selectedId} 
+                    onSelect={() => setSelectedId(el.id)}
+                    onDelete={() => setElements(elements.filter(e => e.id !== el.id))}
+                    onDuplicate={() => setElements([...elements, {...el, id: `el-${Date.now()}`, x: el.x + 15}])}
+                    onChange={(newAttrs) => {
+                      const newElements = [...elements];
+                      newElements[i] = newAttrs;
+                      setElements(newElements);
+                    }}
+                  />
+                ))}
+              </Layer>
+            </Stage>
+          </div>
+
+          {/* Zoom Slider */}
+          <div className="ak-zoom-bar">
+            <span>-</span>
+            <input type="range" min="0.5" max="2" step="0.1" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
+            <span>+</span>
+            <div className="zoom-value">{Math.round(zoom * 100)}%</div>
+          </div>
         </main>
       </div>
 
-      <footer className="ak-timeline">
-        <div className="timeline-labels">{elements.map(el => <div key={el.id} className="label-item">{el.type}</div>)}</div>
-        <div className="timeline-tracks">
+      {/* Modern Timeline */}
+      <footer className="ak-bottom-timeline">
+        <div className="timeline-header">
+           <div className="time-display">00:00:00 / 00:00:10</div>
+           <div className="play-controls">⏮ ⏸ ⏭</div>
+        </div>
+        <div className="timeline-layers">
           {elements.map(el => (
-            <div key={el.id} className={`track-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-              <div className="track-pill" style={{ width: el.duration * 40, left: el.start * 40 }}>{el.type}</div>
+            <div key={el.id} className={`layer-row ${el.id === selectedId ? 'selected' : ''}`} onClick={() => setSelectedId(el.id)}>
+              <div className="layer-info">{el.type}</div>
+              <div className="layer-track">
+                <div className="layer-pill" style={{ width: el.duration * 40, left: el.start * 40 }}>{el.type}</div>
+              </div>
             </div>
           ))}
         </div>
@@ -146,5 +163,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
