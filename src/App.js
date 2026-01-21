@@ -3,29 +3,15 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Text } from 'reac
 import useImage from 'use-image';
 import './App.css';
 
-// Context Menu (Canva Style Bottom Popup)
+// Context Menu
 const ContextMenu = ({ onClose, onDelete, onDuplicate }) => (
   <div className="context-menu-overlay" onClick={onClose}>
     <div className="context-menu" onClick={e => e.stopPropagation()}>
       <div className="drag-handle"></div>
       <div className="menu-items-row">
-        <div className="c-item" onClick={onDuplicate}>
-          <div className="c-icon">📑</div>
-          <span>Copy</span>
-        </div>
-        <div className="c-item" onClick={onDuplicate}>
-          <div className="c-icon">📋</div>
-          <span>Paste</span>
-        </div>
-        <div className="c-item delete" onClick={onDelete}>
-          <div className="c-icon">🗑️</div>
-          <span>Delete</span>
-        </div>
-      </div>
-      <div className="menu-list">
-        <div className="list-item"><span>🔒</span> Lock Element</div>
-        <div className="list-item"><span>↕️</span> Layer Order</div>
-        <div className="list-item"><span>Transparency</span></div>
+        <div className="c-item" onClick={onDuplicate}><div className="c-icon">📑</div><span>Copy</span></div>
+        <div className="c-item" onClick={onDuplicate}><div className="c-icon">📋</div><span>Paste</span></div>
+        <div className="c-item delete" onClick={onDelete}><div className="c-icon">🗑️</div><span>Delete</span></div>
       </div>
     </div>
   </div>
@@ -43,46 +29,20 @@ const RenderElement = ({ el, isSelected, onSelect, onChange }) => {
     }
   }, [isSelected]);
 
+  const handleDragEnd = (e) => onChange({ ...el, x: e.target.x(), y: e.target.y() });
+  const handleTransformEnd = () => {
+    const node = shapeRef.current;
+    onChange({ ...el, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() });
+  };
+
   return (
     <React.Fragment>
       {el.type === 'Text' ? (
-        <Text
-          {...el}
-          draggable
-          onClick={onSelect}
-          onTap={onSelect}
-          ref={shapeRef}
-          onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
-          onTransformEnd={() => {
-            const node = shapeRef.current;
-            onChange({ ...el, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() });
-          }}
-        />
+        <Text {...el} draggable onClick={onSelect} onTap={onSelect} ref={shapeRef} onDragEnd={handleDragEnd} onTransformEnd={handleTransformEnd} />
       ) : (
-        <KonvaImage
-          {...el}
-          image={img}
-          draggable
-          onClick={onSelect}
-          onTap={onSelect}
-          ref={shapeRef}
-          onDragEnd={(e) => onChange({ ...el, x: e.target.x(), y: e.target.y() })}
-          onTransformEnd={() => {
-            const node = shapeRef.current;
-            onChange({ ...el, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() });
-          }}
-        />
+        <KonvaImage {...el} image={img} draggable onClick={onSelect} onTap={onSelect} ref={shapeRef} onDragEnd={handleDragEnd} onTransformEnd={handleTransformEnd} />
       )}
-      {isSelected && (
-        <Transformer 
-          ref={trRef} 
-          anchorSize={12} 
-          borderStroke="#7E22CE" 
-          anchorStroke="#7E22CE" 
-          anchorFill="#fff" 
-          borderDash={[4, 4]}
-        />
-      )}
+      {isSelected && <Transformer ref={trRef} anchorSize={10} borderStroke="#7E22CE" anchorFill="#fff" />}
     </React.Fragment>
   );
 };
@@ -90,47 +50,69 @@ const RenderElement = ({ el, isSelected, onSelect, onChange }) => {
 export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [activeTab, setActiveTab] = useState(null); 
-  const [zoom, setZoom] = useState(0.55); // Mobile fit
+  const [activeTab, setActiveTab] = useState(null);
+  
+  // Canvas Scaling State
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+  
+  // Canvas Size (Internal Resolution)
+  const CANVAS_WIDTH = 1080;
+  const CANVAS_HEIGHT = 1920; // 9:16 Ratio
+
+  // Auto-Fit Logic
+  useEffect(() => {
+    if (containerRef.current) {
+      const { clientWidth, clientHeight } = containerRef.current;
+      const padding = 40;
+      
+      const scaleX = (clientWidth - padding) / CANVAS_WIDTH;
+      const scaleY = (clientHeight - padding) / CANVAS_HEIGHT;
+      const newScale = Math.min(scaleX, scaleY);
+      
+      setScale(newScale);
+    }
+  }, []); // Run once on mount
 
   const assets = {
     Elements: [
       { url: 'https://img.icons8.com/color/200/lion.png' },
       { url: 'https://img.icons8.com/fluency/200/business-man.png' },
-      { url: 'https://img.icons8.com/color/200/robot-3.png' }
     ],
   };
 
   const addItem = (type, data = {}) => {
     const newEl = type === 'Text' 
-      ? { id: `el-${Date.now()}`, type, content: 'Add Text', x: 50, y: 150, fontSize: 40, fill: '#000' }
-      : { id: `el-${Date.now()}`, type, url: data.url, x: 50, y: 50, scaleX: 1, scaleY: 1, rotation: 0 };
-    
+      ? { id: `el-${Date.now()}`, type, content: 'Text', x: CANVAS_WIDTH/2, y: CANVAS_HEIGHT/2, fontSize: 80, fill: '#000' }
+      : { id: `el-${Date.now()}`, type, url: data.url, x: CANVAS_WIDTH/2, y: CANVAS_HEIGHT/2, scaleX: 1, scaleY: 1, rotation: 0 };
     setElements([...elements, newEl]);
     setActiveTab(null);
   };
 
   return (
-    <div className="mobile-app">
-      {/* 1. Gradient Header */}
-      <header className="app-header">
-        <div className="header-left">
-          <div className="round-btn">🏠</div>
-          <div className="round-btn">↩</div>
-          <div className="round-btn">↪</div>
-        </div>
-        <div className="header-right">
-          <div className="round-btn">•••</div>
-          <button className="export-pill">⬆</button>
+    <div className="canva-mobile-shell">
+      {/* 1. Header (Fixed) */}
+      <header className="c-header">
+        <div className="icon-btn">🏠</div>
+        <div className="c-title">Aknikki Design</div>
+        <div className="header-actions">
+           <div className="icon-btn">•••</div>
+           <button className="c-export">⬆</button>
         </div>
       </header>
 
-      {/* 2. Workspace (Gray Background) */}
-      <main className="workspace">
-        <div className="canvas-shadow-box" style={{ transform: `scale(${zoom})` }}>
-          <Stage width={360} height={640} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
+      {/* 2. Workspace (Flexible Center) */}
+      <main className="c-workspace" ref={containerRef}>
+        <div className="canvas-wrapper" 
+             style={{ 
+               width: CANVAS_WIDTH, 
+               height: CANVAS_HEIGHT, 
+               transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)` 
+             }}>
+          <Stage width={CANVAS_WIDTH} height={CANVAS_HEIGHT} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
             <Layer>
-              <Rect width={360} height={640} fill="#fff" />
+              <Rect width={CANVAS_WIDTH} height={CANVAS_HEIGHT} fill="#ffffff" />
               {elements.map((el, i) => (
                 <RenderElement 
                   key={el.id} el={el} isSelected={el.id === selectedId}
@@ -147,94 +129,64 @@ export default function App() {
         </div>
       </main>
 
-      {/* 3. Timeline Strip (Just above menu) */}
-      <div className="timeline-strip">
-        <div className="timer">0:00 <span className="play-triangle">▶</span> 0:05</div>
-        <div className="timeline-content">
-          <div className="timeline-add">+</div>
-          <div className="frame-thumb active">
-             <div className="thumb-content">Page 1</div>
-          </div>
-          <div className="frame-thumb">
-             <div className="thumb-content">Page 2</div>
-          </div>
-        </div>
+      {/* 3. Timeline (Canva Style) */}
+      <div className="c-timeline-area">
+         <div className="timeline-meta">
+            <span className="time-text">0:04 / 0:10</span>
+            <button className="play-btn">▶</button>
+         </div>
+         <div className="timeline-strip">
+            <div className="playhead-line"></div>
+            <div className="track-scroll">
+               <div className="track-item active">
+                  <div className="track-thumb">1</div>
+               </div>
+               <div className="track-item">
+                  <div className="track-thumb">2</div>
+               </div>
+               <div className="track-add">+</div>
+            </div>
+         </div>
       </div>
 
-      {/* 4. Bottom Tab Bar (Fixed) */}
-      <nav className="bottom-tabs">
-        <div className="tab-item" onClick={() => setActiveTab('Design')}>
-           <div className="tab-icon">🎨</div>
-           <span>Design</span>
-        </div>
-        <div className="tab-item" onClick={() => setActiveTab('Elements')}>
-           <div className="tab-icon">❤️</div>
-           <span>Elements</span>
-        </div>
-        <div className="tab-item" onClick={() => setActiveTab('Text')}>
-           <div className="tab-icon">T</div>
-           <span>Text</span>
-        </div>
-        <div className="tab-item" onClick={() => setActiveTab('Gallery')}>
-           <div className="tab-icon">📷</div>
-           <span>Gallery</span>
-        </div>
-        <div className="tab-item" onClick={() => setActiveTab('Brand')}>
-           <div className="tab-icon">©️</div>
-           <span>Brand</span>
-        </div>
+      {/* 4. Bottom Menu (Fixed) */}
+      <nav className="c-bottom-nav">
+        {['Design', 'Elements', 'Text', 'Gallery', 'Uploads'].map(item => (
+           <div key={item} className={`nav-tab ${activeTab === item ? 'active' : ''}`} onClick={() => setActiveTab(item)}>
+              <div className="nav-icon">{item === 'Elements' ? '❤️' : item === 'Text' ? 'T' : item === 'Gallery' ? '📷' : '🎨'}</div>
+              <span>{item}</span>
+           </div>
+        ))}
       </nav>
 
-      {/* 5. Bottom Sheet (Content Drawer) */}
+      {/* 5. Bottom Sheet (Overlay) */}
       {activeTab && (
-        <div className="sheet-container">
-          <div className="sheet-backdrop" onClick={() => setActiveTab(null)}></div>
-          <div className="sheet-modal">
-            <div className="sheet-drag-handle"></div>
-            <div className="sheet-search">
-              <span>🔍</span>
-              <input placeholder={`Search ${activeTab}...`} autoFocus />
-            </div>
-            
-            <div className="sheet-body">
-              {activeTab === 'Elements' && (
-                <>
-                  <div className="section-title">Recently Used</div>
-                  <div className="grid-row">
-                    {assets.Elements.map(a => <img key={a.url} src={a.url} onClick={() => addItem('Img', a)} className="grid-item" alt="el"/>)}
-                  </div>
-                  <div className="section-title">Shapes</div>
-                  <div className="grid-row">
-                     <div className="shape-box circle" onClick={() => addItem('Text')}></div>
-                     <div className="shape-box square" onClick={() => addItem('Text')}></div>
-                     <div className="shape-box tri" onClick={() => addItem('Text')}></div>
-                  </div>
-                </>
-              )}
-              {activeTab === 'Text' && (
-                <div className="text-stack">
-                  <button className="add-heading-btn" onClick={() => addItem('Text')}>Add a heading</button>
-                  <button className="add-sub-btn" onClick={() => addItem('Text')}>Add a subheading</button>
-                  <button className="add-body-btn" onClick={() => addItem('Text')}>Add a little bit of body text</button>
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="c-sheet-overlay" onClick={() => setActiveTab(null)}>
+           <div className="c-sheet" onClick={e => e.stopPropagation()}>
+              <div className="sheet-handle"></div>
+              <div className="sheet-search">
+                 <span>🔍</span>
+                 <input placeholder={`Search ${activeTab}`} />
+              </div>
+              <div className="sheet-content">
+                 {activeTab === 'Elements' && (
+                    <div className="c-grid">
+                       {assets.Elements.map(a => <img key={a.url} src={a.url} onClick={() => addItem('Img', a)} alt="el"/>)}
+                    </div>
+                 )}
+                 {activeTab === 'Text' && (
+                    <div className="text-list">
+                       <button className="txt-btn h1" onClick={() => addItem('Text')}>Add Heading</button>
+                       <button className="txt-btn h2" onClick={() => addItem('Text')}>Add Subheading</button>
+                    </div>
+                 )}
+              </div>
+           </div>
         </div>
       )}
 
-      {/* 6. Context Menu Logic */}
-      {selectedId && (
-        <ContextMenu 
-          onClose={() => setSelectedId(null)}
-          onDelete={() => { setElements(elements.filter(e => e.id !== selectedId)); setSelectedId(null); }}
-          onDuplicate={() => {
-             const el = elements.find(e => e.id === selectedId);
-             setElements([...elements, { ...el, id: `el-${Date.now()}`, x: el.x + 20 }]);
-          }}
-        />
-      )}
+      {selectedId && <ContextMenu onClose={() => setSelectedId(null)} onDelete={() => {setElements(elements.filter(e => e.id !== selectedId)); setSelectedId(null)}} />}
     </div>
   );
   }
-            
+  
