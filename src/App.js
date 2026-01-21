@@ -3,13 +3,12 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Group, Text } fro
 import useImage from 'use-image';
 import './App.css';
 
-// Floating Control for Objects
-const FloatingMenu = ({ x, y, onDelete, onDuplicate }) => (
+const ObjectControl = ({ x, y, onDelete, onDuplicate }) => (
   <Group x={x} y={y - 50}>
-    <Rect width={100} height={32} fill="#ffffff" cornerRadius={6} shadowBlur={10} shadowOpacity={0.15} />
-    <Text text="🗑️" x={12} y={8} onClick={onDelete} cursor="pointer" />
-    <Text text="📑" x={42} y={8} onClick={onDuplicate} cursor="pointer" />
-    <Text text="•••" x={72} y={8} cursor="pointer" />
+    <Rect width={100} height={32} fill="white" cornerRadius={6} shadowBlur={10} shadowOpacity={0.1} />
+    <Text text="🗑️" x={12} y={10} onClick={onDelete} cursor="pointer" />
+    <Text text="📑" x={45} y={10} onClick={onDuplicate} cursor="pointer" />
+    <Text text="•••" x={75} y={10} cursor="pointer" />
   </Group>
 );
 
@@ -30,7 +29,6 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
     ref: shapeRef,
     draggable: true,
     onClick: onSelect,
-    onTap: onSelect,
     onDragEnd: (e) => onChange({ ...el, x: e.target.x(), y: e.target.y() }),
     onTransformEnd: () => {
       const node = shapeRef.current;
@@ -52,8 +50,8 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
       )}
       {isSelected && (
         <>
-          <Transformer ref={trRef} boundBoxFunc={(oldBox, newBox) => Math.abs(newBox.width) < 5 ? oldBox : newBox} />
-          <FloatingMenu x={el.x} y={el.y} onDelete={onDelete} onDuplicate={onDuplicate} />
+          <Transformer ref={trRef} />
+          <ObjectControl x={el.x} y={el.y} onDelete={onDelete} onDuplicate={onDuplicate} />
         </>
       )}
     </React.Fragment>
@@ -64,93 +62,74 @@ export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
-  const [uploadTab, setUploadTab] = useState('Images'); // Tabs: Images, Videos, Audio
+  const [searchTerm, setSearchTerm] = useState("");
   const [zoom, setZoom] = useState(0.8);
   const [ratio, setRatio] = useState({ w: 360, h: 450 });
 
+  const assets = {
+    BG: [{ name: 'Sky', url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=200' }],
+    Char: [{ name: 'Lion', url: 'https://img.icons8.com/color/200/lion.png' }]
+  };
+
   const addItem = (type, data = {}) => {
-    const id = `el-${Date.now()}`;
-    const newEl = type === 'Text' 
-      ? { id, type, content: data.content || 'New Text', x: 50, y: 150, fontSize: 30, fill: '#000', start: 0, duration: 5 }
-      : { id, type, url: data.url, x: 50, y: 50, start: 0, duration: 5, scaleX: 1, scaleY: 1, rotation: 0 };
-    
+    const newEl = { id: `el-${Date.now()}`, type, x: 50, y: 50, start: 0, duration: 5, ...data };
     setElements([...elements, newEl]);
     setActivePanel(null);
-    setSelectedId(id);
+  };
+
+  // Layer Order Change (Drag & Drop Logic)
+  const moveLayer = (index, direction) => {
+    const newElements = [...elements];
+    const targetIndex = index + direction;
+    if (targetIndex >= 0 && targetIndex < newElements.length) {
+      [newElements[index], newElements[targetIndex]] = [newElements[targetIndex], newElements[index]];
+      setElements(newElements);
+    }
   };
 
   return (
     <div className="ak-pro-root">
       <header className="ak-header">
         <div className="ak-logo">Aknikki <span>Pro</span></div>
-        <div className="header-right">
-          <select className="ratio-select" onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
-            <option value="4:5">4:5 Insta</option>
-            <option value="16:9">16:9 YT</option>
-          </select>
-          <button className="export-btn">Export</button>
-        </div>
+        <select onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
+          <option value="4:5">4:5 Insta</option>
+          <option value="16:9">16:9 YT</option>
+        </select>
+        <button className="export-btn">Export</button>
       </header>
 
       <div className="ak-main">
-        {/* Sidebar */}
         <aside className="ak-sidebar">
-          <div className={`side-item ${activePanel === 'BG' ? 'on' : ''}`} onClick={() => setActivePanel('BG')}>🖼️<span>BG</span></div>
-          <div className={`side-item ${activePanel === 'Char' ? 'on' : ''}`} onClick={() => setActivePanel('Char')}>👤<span>Char</span></div>
-          <div className={`side-item ${activePanel === 'Text' ? 'on' : ''}`} onClick={() => setActivePanel('Text')}>T<span>Text</span></div>
-          <div className={`side-item ${activePanel === 'Audio' ? 'on' : ''}`} onClick={() => setActivePanel('Audio')}>🎵<span>Audio</span></div>
-          <div className={`side-item ${activePanel === 'Upload' ? 'on' : ''}`} onClick={() => setActivePanel('Upload')}>📤<span>Upload</span></div>
+          {['BG', 'Char', 'Text', 'Audio', 'Upload'].map(item => (
+            <div key={item} className={`side-item ${activePanel === item ? 'on' : ''}`} 
+                 onClick={() => setActivePanel(activePanel === item ? null : item)}>
+              {item === 'BG' ? '🖼️' : item === 'Char' ? '👤' : item === 'Text' ? 'T' : item === 'Audio' ? '🎵' : '📤'}
+              <span>{item}</span>
+            </div>
+          ))}
         </aside>
 
-        {/* Sliding Panel */}
+        {/* Sliding Panel with Search & Arrow Close */}
         <div className={`ak-panel ${activePanel ? 'open' : ''}`}>
           <div className="panel-top">
-            <h3>{activePanel}</h3>
-            <button onClick={() => setActivePanel(null)}>×</button>
+            <input placeholder="Search assets..." onChange={(e) => setSearchTerm(e.target.value)} className="search-bar" />
+            <button className="arrow-close" onClick={() => setActivePanel(null)}>❮</button>
           </div>
-
-          {/* Special Upload Tabs */}
-          {activePanel === 'Upload' && (
-            <div className="upload-tabs">
-              <button className={uploadTab === 'Images' ? 'active' : ''} onClick={() => setUploadTab('Images')}>Images</button>
-              <button className={uploadTab === 'Videos' ? 'active' : ''} onClick={() => setUploadTab('Videos')}>Videos</button>
-              <button className={uploadTab === 'Audio' ? 'active' : ''} onClick={() => setUploadTab('Audio')}>Audio</button>
-            </div>
-          )}
-
-          <div className="panel-content">
-            {activePanel === 'Text' && (
-              <div className="text-options">
-                <button onClick={() => addItem('Text', {content: 'Heading'})} className="add-text-btn h1">Add Heading</button>
-                <button onClick={() => addItem('Text', {content: 'Subheading'})} className="add-text-btn h2">Add Subheading</button>
-              </div>
-            )}
-            {activePanel === 'BG' && (
-              <div className="asset-grid">
-                <img src="https://images.unsplash.com/photo-1557683316-973673baf926?w=200" onClick={() => addItem('BG', {url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400'})} alt="bg"/>
-              </div>
-            )}
-            {activePanel === 'Upload' && (
-              <div className="upload-section">
-                <label className="upload-box">
-                  <input type="file" hidden />
-                  <span>Click to Upload {uploadTab}</span>
-                </label>
-                <div className="empty-msg">No {uploadTab} Uploaded Yet</div>
-              </div>
-            )}
+          <div className="asset-grid">
+            {activePanel === 'Text' && <button onClick={() => addItem('Text', {content: 'New Text', fontSize: 30})}>Add Text</button>}
+            {assets[activePanel]?.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())).map(a => (
+              <img key={a.url} src={a.url} onClick={() => addItem(activePanel, {url: a.url})} alt="asset" />
+            ))}
           </div>
         </div>
 
-        {/* Workspace Area */}
         <main className="ak-workspace">
           <div className="stage-center" style={{ transform: `scale(${zoom})` }}>
             <Stage width={ratio.w} height={ratio.h} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
               <Layer>
-                <Rect width={ratio.w} height={ratio.h} fill="#fff" shadowBlur={15} shadowOpacity={0.1} />
+                <Rect width={ratio.w} height={ratio.h} fill="#fff" shadowBlur={15} />
                 {elements.map((el, i) => (
-                  <RenderElement 
-                    key={el.id} el={el} isSelected={el.id === selectedId}
+                  <RenderElement key={el.id} el={el} isSelected={el.id === selectedId}
                     onSelect={() => setSelectedId(el.id)}
                     onDelete={() => setElements(elements.filter(e => e.id !== el.id))}
                     onDuplicate={() => setElements([...elements, {...el, id: `el-${Date.now()}`, x: el.x + 20}])}
@@ -165,27 +144,22 @@ export default function App() {
             </Stage>
           </div>
           <div className="zoom-control">
-            <input type="range" min="0.2" max="2" step="0.1" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
-            <span>{Math.round(zoom * 100)}%</span>
+            <input type="range" min="0.3" max="1.5" step="0.1" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
           </div>
         </main>
       </div>
 
-      {/* Timeline with Placeholders */}
       <footer className="ak-timeline">
-        <div className="tl-container">
-          <div className="tl-track-placeholder">Backgrounds</div>
-          <div className="tl-track-placeholder">Characters / Elements</div>
-          <div className="tl-track-placeholder">Audio Clips</div>
-          
-          {/* Active Layers Render here */}
-          {elements.map(el => (
-            <div key={el.id} className={`tl-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-              <div className="tl-label">{el.type}</div>
-              <div className="tl-bar-bg"><div className="tl-bar" style={{ width: el.duration * 30, left: el.start * 30 }}>{el.type}</div></div>
+        {elements.map((el, i) => (
+          <div key={el.id} className={`tl-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
+            <div className="tl-order">
+              <button onClick={() => moveLayer(i, 1)}>▲</button>
+              <button onClick={() => moveLayer(i, -1)}>▼</button>
             </div>
-          ))}
-        </div>
+            <div className="tl-label">{el.type}</div>
+            <div className="tl-bar-bg"><div className="tl-bar" style={{ width: el.duration * 30, left: el.start * 30 }}>{el.type}</div></div>
+          </div>
+        ))}
       </footer>
     </div>
   );
