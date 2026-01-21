@@ -1,19 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Group, Text } from 'react-konva';
+import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Text } from 'react-konva';
 import useImage from 'use-image';
 import './App.css';
 
-// Floating Quick Menu (Delete, Duplicate, More)
-const FloatingMenu = ({ x, y, onDelete, onDuplicate, onMore }) => (
-  <Group x={x} y={y - 60}>
-    <Rect width={120} height={35} fill="white" cornerRadius={8} shadowBlur={10} shadowOpacity={0.2} />
-    <Text text="🗑️" x={15} y={10} onClick={onDelete} cursor="pointer" fontSize={14} />
-    <Text text="📑" x={50} y={10} onClick={onDuplicate} cursor="pointer" fontSize={14} />
-    <Text text="•••" x={85} y={10} onClick={onMore} cursor="pointer" fontSize={14} />
-  </Group>
+// 1. Canva Style Action Sheet (Bottom Menu)
+const ActionSheet = ({ onClose, onDelete, onDuplicate, onLayerUp, onLayerDown }) => (
+  <div className="action-sheet-overlay" onClick={onClose}>
+    <div className="action-sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet-handle"></div>
+      <div className="sheet-grid">
+        <div className="sheet-item" onClick={onDuplicate}><div className="sheet-icon">📑</div><span>Duplicate</span></div>
+        <div className="sheet-item" onClick={onLayerUp}><div className="sheet-icon">🔼</div><span>Bring Fwd</span></div>
+        <div className="sheet-item" onClick={onLayerDown}><div className="sheet-icon">🔽</div><span>Send Back</span></div>
+        <div className="sheet-item delete" onClick={onDelete}><div className="sheet-icon">🗑️</div><span>Delete</span></div>
+      </div>
+    </div>
+  </div>
 );
 
-const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplicate, onMore }) => {
+const RenderElement = ({ el, isSelected, onSelect, onChange }) => {
   const [img] = useImage(el.url || '');
   const shapeRef = useRef();
   const trRef = useRef();
@@ -34,12 +39,7 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
     onDragEnd: (e) => onChange({ ...el, x: e.target.x(), y: e.target.y() }),
     onTransformEnd: () => {
       const node = shapeRef.current;
-      onChange({
-        ...el,
-        x: node.x(), y: node.y(),
-        scaleX: node.scaleX(), scaleY: node.scaleY(),
-        rotation: node.rotation(),
-      });
+      onChange({ ...el, x: node.x(), y: node.y(), scaleX: node.scaleX(), scaleY: node.scaleY(), rotation: node.rotation() });
     }
   };
 
@@ -51,10 +51,14 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
         <KonvaImage {...commonProps} image={img} />
       )}
       {isSelected && (
-        <>
-          <Transformer ref={trRef} rotateEnabled={true} anchorSize={8} borderStroke="#006aff" />
-          <FloatingMenu x={el.x} y={el.y} onDelete={onDelete} onDuplicate={onDuplicate} onMore={onMore} />
-        </>
+        <Transformer 
+          ref={trRef} 
+          anchorStroke="#8b3dff" 
+          anchorFill="#fff" 
+          anchorSize={10} 
+          borderStroke="#8b3dff" 
+          borderDash={[4, 4]} 
+        />
       )}
     </React.Fragment>
   );
@@ -63,256 +67,155 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
 export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [activePanel, setActivePanel] = useState(null); // Left Panel
-  const [showProperties, setShowProperties] = useState(false); // Right Panel (3-dots)
-  const [uploadTab, setUploadTab] = useState('Image');
-  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState('Elements'); // Elements, Uploads, Text
+  const [showMenu, setShowMenu] = useState(false); // Bottom Sheet State
   const [zoom, setZoom] = useState(0.8);
-  const [ratio, setRatio] = useState({ w: 360, h: 450 });
-
-  // Timeline Resizing States
-  const [isResizing, setIsResizing] = useState(false);
-  const [resizeTargetId, setResizeTargetId] = useState(null);
+  
+  // Timeline Logic
+  const [duration, setDuration] = useState(5); // Default clip duration
 
   const assets = {
-    BG: [
-      { name: 'Blue Grad', url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=300' },
-      { name: 'Abstract', url: 'https://images.unsplash.com/photo-1503455637927-730bce8583c0?w=300' },
-      { name: 'Neon', url: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300' }
-    ],
-    Char: [
+    Elements: [
       { name: 'Lion', url: 'https://img.icons8.com/color/200/lion.png' },
-      { name: 'Man', url: 'https://img.icons8.com/fluency/200/business-man.png' },
-      { name: 'Robot', url: 'https://img.icons8.com/color/200/robot-3.png' }
+      { name: 'Shape', url: 'https://img.icons8.com/fluency/200/geometric-shape.png' }
     ],
-    GIF: [
-      { name: 'Cat GIF', url: 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif' },
-      { name: 'Loading', url: 'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif' }
-    ],
-    Video: [
-      { name: 'Nature Clip', url: 'https://img.icons8.com/color/200/video-file.png' } // Placeholder for Video
-    ]
+    Uploads: [],
   };
 
   const addItem = (type, data = {}) => {
     const id = `el-${Date.now()}`;
     const newEl = type === 'Text' 
-      ? { id, type, content: data.content || 'New Text', x: 100, y: 200, fontSize: 30, fill: '#000', start: 0, duration: 5 }
-      : { id, type, url: data.url, x: 100, y: 100, start: 0, duration: 5, scaleX: 1, scaleY: 1, rotation: 0 };
+      ? { id, type, content: 'Happy Republic Day', x: 50, y: 150, fontSize: 32, fill: '#333', duration: 5 }
+      : { id, type, url: data.url, x: 50, y: 50, scaleX: 1, scaleY: 1, rotation: 0, duration: 5 };
     
     setElements([...elements, newEl]);
-    setActivePanel(null);
     setSelectedId(id);
-    setShowProperties(false);
+    setShowMenu(false);
   };
 
-  // --- Timeline Resize Logic ---
-  const handleTimelineMouseDown = (e, id) => {
-    e.stopPropagation();
-    setIsResizing(true);
-    setResizeTargetId(id);
+  const handleDelete = () => {
+    setElements(elements.filter(e => e.id !== selectedId));
+    setShowMenu(false);
+    setSelectedId(null);
   };
 
-  const handleTimelineMouseMove = (e) => {
-    if (isResizing && resizeTargetId) {
-      // Calculate new duration based on mouse X position
-      // Assuming 1 second = 30px width
-      const trackStart = document.getElementById('timeline-tracks').getBoundingClientRect().left;
-      const mouseX = e.clientX - trackStart;
-      
-      const newElements = elements.map(el => {
-        if (el.id === resizeTargetId) {
-          // Find start position in pixels
-          const startPx = el.start * 30;
-          // New width = Mouse Pos - Start Pos
-          let newWidth = mouseX - startPx;
-          if (newWidth < 30) newWidth = 30; // Min duration 1 sec
-          return { ...el, duration: newWidth / 30 };
-        }
-        return el;
-      });
-      setElements(newElements);
+  const handleDuplicate = () => {
+    const el = elements.find(e => e.id === selectedId);
+    if (el) {
+      setElements([...elements, { ...el, id: `el-${Date.now()}`, x: el.x + 20, y: el.y + 20 }]);
+      setShowMenu(false);
     }
   };
-
-  const handleTimelineMouseUp = () => {
-    setIsResizing(false);
-    setResizeTargetId(null);
-  };
-  // -----------------------------
-
-  const moveLayer = (direction) => {
-    if (!selectedId) return;
-    const index = elements.findIndex(e => e.id === selectedId);
-    if (index === -1) return;
-    
-    const newElements = [...elements];
-    const targetIndex = index + direction;
-    
-    if (targetIndex >= 0 && targetIndex < newElements.length) {
-      [newElements[index], newElements[targetIndex]] = [newElements[targetIndex], newElements[index]];
-      setElements(newElements);
-    }
-  };
-
-  useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', handleTimelineMouseMove);
-      window.addEventListener('mouseup', handleTimelineMouseUp);
-    } else {
-      window.removeEventListener('mousemove', handleTimelineMouseMove);
-      window.removeEventListener('mouseup', handleTimelineMouseUp);
-    }
-    return () => {
-      window.removeEventListener('mousemove', handleTimelineMouseMove);
-      window.removeEventListener('mouseup', handleTimelineMouseUp);
-    };
-  }, [isResizing]);
 
   return (
-    <div className="ak-pro-root">
-      <header className="ak-header">
-        <div className="ak-logo">Aknikki <span>Pro</span></div>
-        <div className="header-right">
-          <select onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
-            <option value="4:5">4:5 Insta</option>
-            <option value="16:9">16:9 YT</option>
-          </select>
-          <button className="export-btn">Export</button>
-        </div>
+    <div className="canva-layout">
+      {/* 1. Clean Top Bar (Like Canva) */}
+      <header className="top-bar">
+        <div className="home-icon">🏠</div>
+        <div className="file-menu">File</div>
+        <div className="spacer"></div>
+        <button className="pro-export-btn">Share</button>
       </header>
 
-      <div className="ak-main">
-        {/* Left Sidebar */}
-        <aside className="ak-sidebar">
-          {['BG', 'Char', 'GIF', 'Video', 'Text', 'Audio', 'Upload'].map(item => (
-            <div key={item} className={`side-item ${activePanel === item ? 'on' : ''}`} 
-                 onClick={() => { setActivePanel(activePanel === item ? null : item); setSearchTerm(""); setShowProperties(false); }}>
-              <div className="icon">{item === 'BG' ? '🖼️' : item === 'Char' ? '👤' : item === 'Text' ? 'T' : item === 'Audio' ? '🎵' : item === 'Upload' ? '📤' : item === 'GIF' ? '👾' : '🎥'}</div>
-              <span>{item}</span>
-            </div>
-          ))}
+      <div className="main-area">
+        {/* 2. Floating Sidebar (Rounded & Clean) */}
+        <aside className="floating-sidebar">
+          <div className={`nav-icon ${activeTab === 'Elements' ? 'active' : ''}`} onClick={() => setActiveTab('Elements')}>
+            <span className="icon">🎨</span><span>Elements</span>
+          </div>
+          <div className={`nav-icon ${activeTab === 'Text' ? 'active' : ''}`} onClick={() => setActiveTab('Text')}>
+            <span className="icon">T</span><span>Text</span>
+          </div>
+          <div className={`nav-icon ${activeTab === 'Uploads' ? 'active' : ''}`} onClick={() => setActiveTab('Uploads')}>
+            <span className="icon">☁️</span><span>Uploads</span>
+          </div>
         </aside>
 
-        {/* Left Sliding Panel */}
-        <div className={`ak-panel ${activePanel ? 'open' : ''}`}>
-          <div className="panel-top">
-            <input placeholder={`Search ${activePanel}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-bar" />
-            <button className="arrow-close" onClick={() => setActivePanel(null)}>❮</button>
-          </div>
-          
-          {activePanel === 'Upload' && (
-             <div className="upload-tabs">
-               {['Image', 'Video', 'Audio'].map(t => (
-                 <button key={t} className={uploadTab === t ? 'active' : ''} onClick={() => setUploadTab(t)}>{t}</button>
-               ))}
-             </div>
-          )}
-
-          <div className="asset-grid">
-            {activePanel === 'Text' && (
-              <div className="text-full-row">
-                <button onClick={() => addItem('Text', {content: 'Add Heading', fontSize: 35})} className="add-text-btn">Add Heading</button>
-                <button onClick={() => addItem('Text', {content: 'Add Body', fontSize: 20})} className="add-text-btn">Add Body</button>
-              </div>
-            )}
-            {activePanel === 'Upload' && <div className="upload-box">Click to Upload {uploadTab}</div>}
+        {/* 3. Sliding Panel (White & Smooth) */}
+        {activeTab && (
+          <div className="side-panel">
+            <div className="search-box">
+              <span className="search-icon">🔍</span>
+              <input placeholder={`Search ${activeTab}...`} />
+            </div>
             
-            {assets[activePanel]?.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())).map(a => (
-              <img key={a.url} src={a.url} onClick={() => addItem(activePanel, {url: a.url})} alt="asset" />
-            ))}
+            <div className="assets-container">
+               {activeTab === 'Text' && (
+                 <div className="text-presets">
+                   <button className="add-heading" onClick={() => addItem('Text')}>Add a heading</button>
+                   <button className="add-subheading" onClick={() => addItem('Text')}>Add a subheading</button>
+                 </div>
+               )}
+               {activeTab === 'Elements' && (
+                 <div className="grid-2">
+                   {assets.Elements.map(a => <img key={a.url} src={a.url} onClick={() => addItem('Img', a)} alt="el"/>)}
+                 </div>
+               )}
+               {/* Close Tab */}
+               <button className="close-tab" onClick={() => setActiveTab(null)}>◀</button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Center Workspace */}
-        <main className="ak-workspace">
-          <div className="stage-container" style={{ transform: `scale(${zoom})` }}>
-            <Stage width={ratio.w} height={ratio.h} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
+        {/* 4. Canvas Center (Gray Background like Canva) */}
+        <div className="canvas-wrapper">
+          <div className="canvas-whiteboard" style={{ transform: `scale(${zoom})` }}>
+            <Stage width={360} height={640} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
               <Layer>
-                <Rect width={ratio.w} height={ratio.h} fill="#fff" shadowBlur={20} shadowOpacity={0.1} />
+                <Rect width={360} height={640} fill="#ffffff" shadowBlur={20} shadowColor="rgba(0,0,0,0.1)" />
                 {elements.map((el, i) => (
-                  <RenderElement key={el.id} el={el} isSelected={el.id === selectedId}
-                    onSelect={() => { setSelectedId(el.id); setActivePanel(null); }}
-                    onDelete={() => { setElements(elements.filter(e => e.id !== el.id)); setShowProperties(false); }}
-                    onDuplicate={() => setElements([...elements, {...el, id: `el-${Date.now()}`, x: el.x + 20}])}
-                    onMore={() => setShowProperties(true)}
+                  <RenderElement 
+                    key={el.id} el={el} isSelected={el.id === selectedId}
+                    onSelect={() => { setSelectedId(el.id); setShowMenu(true); }}
                     onChange={(newAttrs) => {
-                      const newElements = [...elements];
-                      newElements[i] = newAttrs;
-                      setElements(newElements);
+                      const copy = [...elements];
+                      copy[i] = newAttrs;
+                      setElements(copy);
                     }}
                   />
                 ))}
               </Layer>
             </Stage>
           </div>
-          <div className="zoom-bar-fixed">
-            <input type="range" min="0.3" max="1.5" step="0.1" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
-            <span>{Math.round(zoom * 100)}%</span>
-          </div>
-        </main>
+        </div>
+      </div>
 
-        {/* Right Properties Panel (3-Dots Menu) */}
-        <div className={`ak-right-panel ${showProperties ? 'open' : ''}`}>
-           <div className="rp-header">
-             <h3>Properties</h3>
-             <button onClick={() => setShowProperties(false)}>×</button>
-           </div>
-           <div className="rp-content">
-             <div className="rp-section">
-               <label>Layer Order</label>
-               <div className="rp-row">
-                 <button onClick={() => moveLayer(1)}>Bring Forward</button>
-                 <button onClick={() => moveLayer(-1)}>Send Backward</button>
+      {/* 5. Canva Style Timeline (Filmstrip Look) */}
+      <div className="timeline-area">
+        <div className="timeline-controls">
+          <span>0:00 / 0:05</span>
+          <button className="play-btn">▶</button>
+        </div>
+        <div className="timeline-track-container">
+           {/* Plus Button inside Timeline */}
+           <button className="add-timeline-btn">+</button> 
+           
+           <div className="track-scroll">
+             {elements.map(el => (
+               <div key={el.id} className={`clip-box ${el.id === selectedId ? 'selected' : ''}`} onClick={() => setSelectedId(el.id)}>
+                  {/* White Handles for Trimming */}
+                  <div className="handle left"></div>
+                  <div className="clip-content">
+                    <span className="clip-icon">{el.type === 'Text' ? 'T' : '🖼️'}</span>
+                    <span className="clip-duration">5.0s</span>
+                  </div>
+                  <div className="handle right"></div>
                </div>
-             </div>
-             <div className="rp-section">
-               <label>Opacity</label>
-               <input type="range" min="0" max="1" step="0.1" />
-             </div>
-             <div className="rp-section">
-               <label>Transitions</label>
-               <select><option>None</option><option>Fade In</option><option>Slide Left</option></select>
-             </div>
-             <div className="rp-section">
-                <button className="rp-btn-danger" onClick={() => { setElements(elements.filter(e => e.id !== selectedId)); setShowProperties(false); }}>Delete Element</button>
-             </div>
+             ))}
            </div>
         </div>
       </div>
 
-      {/* Timeline with Drag Resize */}
-      <footer className="ak-timeline">
-        <div className="tl-container">
-          <div className="tl-labels">
-            <div className="tl-title">Layers</div>
-            {elements.map(el => (
-              <div key={el.id} className={`tl-row-label ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-                <span>{el.type}</span>
-              </div>
-            ))}
-          </div>
-          <div className="tl-tracks" id="timeline-tracks">
-            <div className="tl-title">Timeline (Drag edge to resize)</div>
-            {elements.map(el => (
-              <div key={el.id} className={`track-row ${el.id === selectedId ? 'active' : ''}`}>
-                <div 
-                  className="track-pill" 
-                  style={{ width: el.duration * 30, left: el.start * 30 }}
-                  onClick={() => setSelectedId(el.id)}
-                >
-                  <span className="pill-text">{el.type}</span>
-                  {/* The Resizer Handle */}
-                  <div 
-                    className="resize-handle"
-                    onMouseDown={(e) => handleTimelineMouseDown(e, el.id)}
-                  >||</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </footer>
+      {/* 6. Action Sheet (Popup Menu) */}
+      {showMenu && selectedId && (
+        <ActionSheet 
+          onClose={() => setShowMenu(false)}
+          onDelete={handleDelete}
+          onDuplicate={handleDuplicate}
+          onLayerUp={() => alert('Moved Up')}
+          onLayerDown={() => alert('Moved Down')}
+        />
+      )}
     </div>
   );
   }
