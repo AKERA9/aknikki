@@ -1,44 +1,38 @@
-:root { --primary: #006aff; --bg: #f5f6f8; --white: #ffffff; --border: #eaebed; }
-body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
+:root { --blue: #006aff; --border: #eaebed; --white: #ffffff; }
+body { margin: 0; font-family: 'Inter', sans-serif; background: #f4f6f8; overflow: hidden; }
 
-.aknikki-pro-root { height: 100vh; display: flex; flex-direction: column; }
+.ak-pro-root { height: 100vh; display: flex; flex-direction: column; }
+.ak-header { height: 50px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1000; }
+.ak-logo { font-weight: 800; color: #1a1a1a; } .ak-logo span { color: var(--blue); }
 
-/* Navbar */
-.ak-top-nav { height: 56px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
-.ak-brand { font-size: 20px; font-weight: 700; color: #1a1a1a; }
-.ak-brand span { color: var(--primary); }
-.ak-export-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.ak-main { flex: 1; display: flex; position: relative; }
+.ak-sidebar { width: 70px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding-top: 20px; z-index: 100; }
+.side-item { cursor: pointer; text-align: center; margin-bottom: 25px; font-size: 10px; color: #666; transition: 0.2s; }
+.side-item.on { color: var(--blue); border-right: 3px solid var(--blue); }
+.side-item span { display: block; margin-top: 5px; font-weight: 600; }
 
-/* Main Layout */
-.ak-main-layout { flex: 1; display: flex; position: relative; overflow: hidden; }
+.ak-panel { position: absolute; left: -300px; top: 0; bottom: 0; width: 280px; background: var(--white); border-right: 1px solid var(--border); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 99; padding: 15px; }
+.ak-panel.open { left: 70px; box-shadow: 20px 0 40px rgba(0,0,0,0.03); }
+.panel-top { display: flex; gap: 10px; margin-bottom: 15px; }
+.panel-top input { flex: 1; border: 1px solid #ddd; padding: 8px; border-radius: 6px; font-size: 13px; }
+.asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow-y: auto; height: 90%; }
+.asset-grid img { width: 100%; border-radius: 8px; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+.asset-grid img:hover { border-color: var(--blue); transform: scale(1.02); }
 
-/* Sidebar */
-.ak-side-menu { width: 72px; background: var(--white); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding-top: 16px; z-index: 99; }
-.menu-item { margin-bottom: 24px; cursor: pointer; text-align: center; font-size: 10px; color: #666; transition: 0.2s; width: 100%; }
-.menu-item span { display: block; margin-top: 4px; }
-.menu-item.active { color: var(--primary); border-right: 3px solid var(--primary); }
+/* CENTER WORKSPACE LOGIC */
+.ak-workspace { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #eef0f2; overflow: hidden; }
+.stage-center { transition: transform 0.15s ease-out; }
 
-/* Slide Panel */
-.ak-side-panel { position: absolute; left: -320px; top: 0; bottom: 0; width: 300px; background: var(--white); border-right: 1px solid var(--border); transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1); z-index: 98; padding: 20px; }
-.ak-side-panel.visible { left: 72px; box-shadow: 20px 0 40px rgba(0,0,0,0.03); }
-.asset-box img { width: 100%; border-radius: 8px; margin-bottom: 12px; cursor: pointer; border: 1px solid transparent; }
-.asset-box img:hover { border-color: var(--primary); }
+.zoom-control { position: absolute; bottom: 20px; right: 20px; background: var(--white); padding: 8px 15px; border-radius: 30px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.zoom-control input { width: 100px; accent-color: var(--blue); }
 
-/* Canvas Workspace */
-.ak-canvas-workspace { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; background: #eef0f2; }
-.canvas-container { transition: transform 0.2s ease; }
+.ak-timeline { height: 180px; background: var(--white); border-top: 1px solid var(--border); overflow-y: auto; }
+.tl-wrap { padding: 15px; }
+.tl-row { display: flex; align-items: center; height: 35px; margin-bottom: 6px; cursor: pointer; }
+.tl-row.active { background: #f0f7ff; }
+.tl-label { width: 80px; font-size: 11px; color: #888; font-weight: 600; }
+.tl-bar-bg { flex: 1; height: 24px; background: #f5f7f9; border-radius: 12px; position: relative; }
+.tl-bar { position: absolute; height: 100%; background: var(--blue); border-radius: 12px; color: white; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
-/* Zoom Bar */
-.ak-zoom-bar { position: absolute; bottom: 24px; right: 24px; background: var(--white); padding: 8px 16px; border-radius: 30px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-.ak-zoom-bar input[type="range"] { width: 120px; accent-color: var(--primary); }
-.zoom-value { font-size: 12px; font-weight: 600; min-width: 40px; }
-
-/* Timeline */
-.ak-bottom-timeline { height: 220px; background: var(--white); border-top: 1px solid var(--border); display: flex; flex-direction: column; z-index: 100; }
-.timeline-header { padding: 10px 24px; display: flex; justify-content: space-between; border-bottom: 1px solid var(--border); font-size: 12px; color: #888; }
-.timeline-layers { flex: 1; overflow-y: auto; padding: 12px 24px; }
-.layer-row { display: flex; align-items: center; height: 36px; margin-bottom: 8px; border-radius: 4px; transition: 0.2s; cursor: pointer; }
-.layer-row.selected { background: #f0f7ff; }
-.layer-info { width: 80px; font-size: 11px; font-weight: 500; color: #555; }
-.layer-track { flex: 1; height: 24px; background: #f8f9fa; position: relative; border-radius: 12px; }
-.layer-pill { position: absolute; height: 100%; background: var(--primary); border-radius: 12px; color: white; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.export-btn { background: var(--blue); color: white; border: none; padding: 7px 18px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+.ratio-select { padding: 5px; border-radius: 5px; border: 1px solid #ddd; }
