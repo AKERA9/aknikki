@@ -3,7 +3,7 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Group, Text } fro
 import useImage from 'use-image';
 import './App.css';
 
-// Context Menu Component (Canva Style)
+// Floating Control for Objects
 const FloatingMenu = ({ x, y, onDelete, onDuplicate }) => (
   <Group x={x} y={y - 50}>
     <Rect width={100} height={32} fill="#ffffff" cornerRadius={6} shadowBlur={10} shadowOpacity={0.15} />
@@ -19,7 +19,7 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
   const trRef = useRef();
 
   useEffect(() => {
-    if (isSelected) {
+    if (isSelected && trRef.current) {
       trRef.current.nodes([shapeRef.current]);
       trRef.current.getLayer().batchDraw();
     }
@@ -46,7 +46,7 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
   return (
     <React.Fragment>
       {el.type === 'Text' ? (
-        <Text {...commonProps} text={el.content} fontSize={el.fontSize} fill={el.fill} fontStyle={el.fontStyle} />
+        <Text {...commonProps} text={el.content} fontSize={el.fontSize} fill={el.fill} />
       ) : (
         <KonvaImage {...commonProps} image={img} />
       )}
@@ -64,35 +64,20 @@ export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
+  const [uploadTab, setUploadTab] = useState('Images'); // Tabs: Images, Videos, Audio
   const [zoom, setZoom] = useState(0.8);
   const [ratio, setRatio] = useState({ w: 360, h: 450 });
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const assets = {
-    Background: [
-      { id: 1, name: 'Night Sky', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400' },
-      { id: 2, name: 'Soft Gradient', url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400' }
-    ],
-    Character: [
-      { id: 101, name: 'Lion Mascot', url: 'https://img.icons8.com/color/200/lion.png' },
-      { id: 102, name: 'Office Man', url: 'https://img.icons8.com/fluency/200/business-man.png' }
-    ]
-  };
 
   const addItem = (type, data = {}) => {
     const id = `el-${Date.now()}`;
     const newEl = type === 'Text' 
-      ? { id, type, content: 'Double click to edit', x: 50, y: 150, fontSize: 30, fill: '#000', start: 0, duration: 5 }
+      ? { id, type, content: data.content || 'New Text', x: 50, y: 150, fontSize: 30, fill: '#000', start: 0, duration: 5 }
       : { id, type, url: data.url, x: 50, y: 50, start: 0, duration: 5, scaleX: 1, scaleY: 1, rotation: 0 };
     
     setElements([...elements, newEl]);
     setActivePanel(null);
     setSelectedId(id);
   };
-
-  const filteredAssets = activePanel && assets[activePanel] 
-    ? assets[activePanel].filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())) 
-    : [];
 
   return (
     <div className="ak-pro-root">
@@ -108,22 +93,56 @@ export default function App() {
       </header>
 
       <div className="ak-main">
+        {/* Sidebar */}
         <aside className="ak-sidebar">
-          <div className={`side-item ${activePanel === 'Background' ? 'on' : ''}`} onClick={() => setActivePanel('Background')}>🖼️<span>BG</span></div>
-          <div className={`side-item ${activePanel === 'Character' ? 'on' : ''}`} onClick={() => setActivePanel('Character')}>👤<span>Char</span></div>
-          <div className="side-item" onClick={() => addItem('Text')}>T<span>Text</span></div>
+          <div className={`side-item ${activePanel === 'BG' ? 'on' : ''}`} onClick={() => setActivePanel('BG')}>🖼️<span>BG</span></div>
+          <div className={`side-item ${activePanel === 'Char' ? 'on' : ''}`} onClick={() => setActivePanel('Char')}>👤<span>Char</span></div>
+          <div className={`side-item ${activePanel === 'Text' ? 'on' : ''}`} onClick={() => setActivePanel('Text')}>T<span>Text</span></div>
+          <div className={`side-item ${activePanel === 'Audio' ? 'on' : ''}`} onClick={() => setActivePanel('Audio')}>🎵<span>Audio</span></div>
+          <div className={`side-item ${activePanel === 'Upload' ? 'on' : ''}`} onClick={() => setActivePanel('Upload')}>📤<span>Upload</span></div>
         </aside>
 
+        {/* Sliding Panel */}
         <div className={`ak-panel ${activePanel ? 'open' : ''}`}>
           <div className="panel-top">
-            <input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            <h3>{activePanel}</h3>
             <button onClick={() => setActivePanel(null)}>×</button>
           </div>
-          <div className="asset-grid">
-            {filteredAssets.map(a => <img key={a.id} src={a.url} onClick={() => addItem(activePanel, a)} alt="a"/>)}
+
+          {/* Special Upload Tabs */}
+          {activePanel === 'Upload' && (
+            <div className="upload-tabs">
+              <button className={uploadTab === 'Images' ? 'active' : ''} onClick={() => setUploadTab('Images')}>Images</button>
+              <button className={uploadTab === 'Videos' ? 'active' : ''} onClick={() => setUploadTab('Videos')}>Videos</button>
+              <button className={uploadTab === 'Audio' ? 'active' : ''} onClick={() => setUploadTab('Audio')}>Audio</button>
+            </div>
+          )}
+
+          <div className="panel-content">
+            {activePanel === 'Text' && (
+              <div className="text-options">
+                <button onClick={() => addItem('Text', {content: 'Heading'})} className="add-text-btn h1">Add Heading</button>
+                <button onClick={() => addItem('Text', {content: 'Subheading'})} className="add-text-btn h2">Add Subheading</button>
+              </div>
+            )}
+            {activePanel === 'BG' && (
+              <div className="asset-grid">
+                <img src="https://images.unsplash.com/photo-1557683316-973673baf926?w=200" onClick={() => addItem('BG', {url: 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400'})} alt="bg"/>
+              </div>
+            )}
+            {activePanel === 'Upload' && (
+              <div className="upload-section">
+                <label className="upload-box">
+                  <input type="file" hidden />
+                  <span>Click to Upload {uploadTab}</span>
+                </label>
+                <div className="empty-msg">No {uploadTab} Uploaded Yet</div>
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Workspace Area */}
         <main className="ak-workspace">
           <div className="stage-center" style={{ transform: `scale(${zoom})` }}>
             <Stage width={ratio.w} height={ratio.h} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
@@ -152,8 +171,14 @@ export default function App() {
         </main>
       </div>
 
+      {/* Timeline with Placeholders */}
       <footer className="ak-timeline">
-        <div className="tl-wrap">
+        <div className="tl-container">
+          <div className="tl-track-placeholder">Backgrounds</div>
+          <div className="tl-track-placeholder">Characters / Elements</div>
+          <div className="tl-track-placeholder">Audio Clips</div>
+          
+          {/* Active Layers Render here */}
           {elements.map(el => (
             <div key={el.id} className={`tl-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
               <div className="tl-label">{el.type}</div>
@@ -164,4 +189,5 @@ export default function App() {
       </footer>
     </div>
   );
-}
+  }
+  
