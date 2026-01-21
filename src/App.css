@@ -1,26 +1,36 @@
-.ak-root { height: 100vh; display: flex; flex-direction: column; background: #fdfdfd; }
-.ak-header { background: white; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; padding: 10px 20px; align-items: center; }
-.ak-logo { color: #007bff; font-weight: 800; font-size: 22px; }
+:root { --blue: #007bff; --white: #ffffff; --gray: #f8f9fa; }
+body { margin: 0; font-family: sans-serif; overflow: hidden; }
 
-.ak-body { flex: 1; display: flex; overflow: hidden; position: relative; }
-.ak-sidebar-pro { width: 80px; border-right: 1px solid #eee; background: white; display: flex; flex-direction: column; gap: 30px; padding-top: 30px; align-items: center; }
+.ak-root { height: 100vh; display: flex; flex-direction: column; background: #eef2f5; }
 
-.ak-slide-panel { position: absolute; left: -350px; top: 0; bottom: 0; width: 300px; background: white; border-right: 1px solid #eee; transition: 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67); z-index: 100; box-shadow: 15px 0 30px rgba(0,0,0,0.03); padding: 20px; }
-.ak-slide-panel.open { left: 81px; }
+.ak-header { height: 50px; background: var(--white); border-bottom: 1px solid #ddd; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 1000; }
+.ak-logo { font-weight: bold; color: var(--blue); font-size: 20px; }
 
-.ak-viewport { flex: 1; background: #f8f9fa; cursor: grab; }
-.ak-viewport:active { cursor: grabbing; }
+.ak-body { flex: 1; display: flex; position: relative; }
 
-/* Timeline Stylings */
-.ak-timeline-v2 { height: 250px; background: white; border-top: 1px solid #eee; display: flex; flex-direction: column; }
-.timeline-scroll { flex: 1; overflow-y: auto; padding: 10px; }
-.track-line { display: flex; align-items: center; height: 45px; border-bottom: 1px solid #fafafa; transition: 0.2s; }
-.selected-track { background: #f0f7ff; }
-.track-label { width: 80px; font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; }
-.track-bar-container { flex: 1; position: relative; height: 30px; background: #fcfcfc; border-radius: 4px; }
-.track-bar { position: absolute; height: 100%; background: #007bff; border-radius: 4px; cursor: move; border: 1px solid #0056b3; }
+/* Sidebar Fixed Over Stage */
+.ak-sidebar { width: 70px; background: var(--white); border-right: 1px solid #ddd; display: flex; flex-direction: column; align-items: center; padding-top: 20px; z-index: 999; }
+.tool-btn { cursor: pointer; margin-bottom: 20px; text-align: center; font-size: 11px; color: #555; }
+.tool-btn.active { color: var(--blue); }
 
-/* Track Resize Handles */
-.resize-handle { position: absolute; width: 6px; height: 100%; background: rgba(255,255,255,0.3); cursor: ew-resize; }
-.resize-handle.left { left: 0; }
-.resize-handle.right { right: 0; }
+/* Slide Panel */
+.ak-slide-panel { position: absolute; left: -350px; top: 0; bottom: 0; width: 300px; background: white; border-right: 1px solid #ddd; transition: 0.3s ease-out; z-index: 998; padding: 20px; box-shadow: 10px 0 20px rgba(0,0,0,0.05); }
+.ak-slide-panel.open { left: 70px; }
+.asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.asset-grid img { width: 100%; border-radius: 8px; cursor: pointer; border: 1px solid #eee; }
+
+/* Viewport Background */
+.ak-viewport { flex: 1; position: relative; background: #dcdde1; overflow: hidden; }
+.zoom-info { position: absolute; bottom: 20px; right: 20px; background: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+
+/* Timeline */
+.ak-timeline { height: 180px; background: white; border-top: 1px solid #ddd; display: flex; z-index: 1000; }
+.timeline-labels { width: 80px; border-right: 1px solid #eee; padding: 10px; }
+.label-item { height: 40px; font-size: 12px; color: #888; display: flex; align-items: center; }
+.timeline-tracks { flex: 1; overflow-x: auto; position: relative; padding: 10px 0; }
+.track-row { height: 40px; border-bottom: 1px solid #f9f9f9; position: relative; width: 2000px; }
+.track-row.active { background: #f0f7ff; }
+.track-pill { position: absolute; height: 30px; top: 5px; background: var(--blue); color: white; border-radius: 5px; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+
+.ak-btn-blue { background: var(--blue); color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+.ak-select { padding: 4px; border-radius: 4px; }
