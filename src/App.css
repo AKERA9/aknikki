@@ -1,86 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root { --purple: #8b3dff; --bg: #f2f3f5; --white: #fff; }
+body { margin: 0; font-family: 'Inter', sans-serif; background: #121212; overflow: hidden; }
 
-:root {
-  --canva-purple: #8b3dff;
-  --canva-bg: #f2f3f5;
-  --white: #ffffff;
-  --text: #0d1216;
-}
+/* Main Mobile Container */
+.mobile-layout { display: flex; flex-direction: column; height: 100vh; background: #f4f6f8; position: relative; }
 
-body { margin: 0; font-family: 'Inter', sans-serif; background: var(--canva-bg); overflow: hidden; color: var(--text); }
+/* 1. Header */
+.mobile-header { height: 50px; background: linear-gradient(90deg, #7b2cbf, #9d4edd); display: flex; align-items: center; padding: 0 15px; color: white; justify-content: space-between; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+.home-btn { font-size: 20px; }
+.app-title { font-weight: 700; font-size: 16px; }
+.export-pill { background: white; color: var(--purple); border: none; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 12px; cursor: pointer; }
 
-.canva-layout { display: flex; flex-direction: column; height: 100vh; }
+/* 2. Workspace */
+.mobile-workspace { flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #ebedf0; position: relative; }
+.canvas-frame { box-shadow: 0 0 30px rgba(0,0,0,0.1); transition: transform 0.2s; background: white; }
 
-/* 1. Top Bar */
-.top-bar { height: 56px; background: linear-gradient(90deg, #00c4cc, #8b3dff); display: flex; align-items: center; padding: 0 16px; color: white; justify-content: space-between; }
-.home-icon { font-size: 20px; cursor: pointer; opacity: 0.9; }
-.file-menu { font-weight: 600; font-size: 14px; margin-left: 15px; cursor: pointer; }
-.pro-export-btn { background: white; color: var(--text); border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+/* 3. Timeline (Above Menu) */
+.mobile-timeline { height: 100px; background: white; border-top: 1px solid #ddd; display: flex; flex-direction: column; z-index: 20; }
+.timeline-info { height: 30px; display: flex; align-items: center; padding: 0 10px; gap: 10px; border-bottom: 1px solid #f0f0f0; background: #fafafa; }
+.play-circle { width: 24px; height: 24px; background: #333; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.add-clip-btn { width: 24px; height: 24px; background: #ddd; border: none; border-radius: 4px; font-weight: bold; }
 
-/* 2. Main Area */
-.main-area { flex: 1; display: flex; position: relative; overflow: hidden; }
+.timeline-scroller { flex: 1; display: flex; align-items: center; gap: 8px; overflow-x: auto; padding: 0 10px; }
+.clip-card { width: 60px; height: 50px; background: #eee; border-radius: 6px; position: relative; border: 2px solid transparent; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.clip-card.active { border-color: var(--purple); background: #f3e5f5; }
+.clip-handle { width: 6px; height: 100%; background: white; position: absolute; top: 0; border: 1px solid #ddd; border-radius: 2px; }
+.clip-handle.left { left: -3px; } .clip-handle.right { right: -3px; }
 
-/* Floating Sidebar (Left) */
-.floating-sidebar { width: 72px; background: var(--white); border-right: 1px solid #e1e4e7; display: flex; flex-direction: column; align-items: center; padding-top: 16px; z-index: 20; }
-.nav-icon { display: flex; flex-direction: column; align-items: center; margin-bottom: 24px; cursor: pointer; color: #555; width: 100%; }
-.nav-icon.active { color: var(--canva-purple); border-left: 3px solid var(--canva-purple); }
-.nav-icon .icon { font-size: 20px; margin-bottom: 4px; }
-.nav-icon span { font-size: 10px; font-weight: 500; }
+/* 4. Bottom Nav (Scrollable) */
+.bottom-nav { height: 65px; background: white; border-top: 1px solid #ddd; z-index: 30; }
+.nav-scroll-container { display: flex; overflow-x: auto; height: 100%; align-items: center; padding: 0 10px; gap: 5px; scrollbar-width: none; }
+.nav-scroll-container::-webkit-scrollbar { display: none; }
 
-/* Side Panel (Drawer) */
-.side-panel { width: 320px; background: var(--white); position: absolute; left: 72px; top: 0; bottom: 0; z-index: 10; box-shadow: 4px 0 16px rgba(0,0,0,0.05); padding: 16px; display: flex; flex-direction: column; }
-.search-box { background: var(--canva-bg); border-radius: 8px; padding: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-.search-box input { border: none; background: transparent; outline: none; width: 100%; font-size: 14px; }
-.close-tab { position: absolute; right: -20px; top: 50%; background: white; border: 1px solid #ddd; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+.nav-item { min-width: 65px; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.7; transition: 0.2s; cursor: pointer; }
+.nav-item.active { opacity: 1; color: var(--purple); }
+.nav-icon { font-size: 22px; margin-bottom: 2px; }
+.nav-item span { font-size: 10px; font-weight: 500; }
 
-/* Text Presets */
-.add-heading { width: 100%; padding: 12px; background: #e0e0e0; border: none; border-radius: 8px; font-size: 20px; font-weight: 800; text-align: left; margin-bottom: 10px; cursor: pointer; }
-.add-subheading { width: 100%; padding: 10px; background: #f0f0f0; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; }
-
-/* Grid */
-.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.grid-2 img { width: 100%; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-.grid-2 img:hover { transform: scale(1.02); }
-
-/* 3. Canvas Center */
-.canvas-wrapper { flex: 1; background: #f2f3f5; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-.canvas-whiteboard { box-shadow: 0 8px 32px rgba(0,0,0,0.1); border-radius: 4px; overflow: hidden; }
-
-/* 4. Timeline (The Filmstrip Look) */
-.timeline-area { height: 140px; background: var(--white); border-top: 1px solid #e1e4e7; display: flex; flex-direction: column; z-index: 30; }
-.timeline-controls { height: 40px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid #f0f0f0; font-size: 12px; font-weight: 600; color: #666; }
-.play-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--text); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-.timeline-track-container { flex: 1; display: flex; align-items: center; padding: 0 16px; gap: 12px; overflow-x: auto; background: #fff; }
-.add-timeline-btn { width: 40px; height: 40px; border-radius: 12px; background: #f0f0f0; border: none; font-size: 20px; color: #666; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.add-timeline-btn:hover { background: #e0e0e0; }
-
-.track-scroll { display: flex; gap: 6px; }
-
-/* Clip Box (Filmstrip style) */
-.clip-box { width: 100px; height: 60px; background: #e1e4e7; border-radius: 8px; position: relative; cursor: pointer; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: 0.2s; }
-.clip-box.selected { border-color: var(--canva-purple); background: #f3e9ff; }
-.clip-content { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.clip-icon { font-size: 16px; }
-.clip-duration { font-size: 9px; font-weight: 600; color: #555; }
-
-/* White Handles */
-.handle { width: 10px; height: 100%; background: white; position: absolute; top: 0; opacity: 0; transition: 0.2s; cursor: ew-resize; display: flex; align-items: center; justify-content: center; }
-.handle::after { content: '||'; font-size: 8px; color: #ccc; }
-.clip-box.selected .handle { opacity: 1; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-.handle.left { left: 0; border-right: 1px solid #eee; }
-.handle.right { right: 0; border-left: 1px solid #eee; }
-
-/* 5. Bottom Action Sheet (Mobile Menu) */
-.action-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 100; display: flex; align-items: flex-end; }
-.action-sheet { width: 100%; background: white; border-radius: 20px 20px 0 0; box-shadow: 0 -4px 20px rgba(0,0,0,0.15); padding: 20px; padding-bottom: 40px; animation: slideUp 0.3s ease; }
-.sheet-handle { width: 40px; height: 5px; background: #e0e0e0; border-radius: 5px; margin: 0 auto 20px auto; }
-.sheet-grid { display: flex; justify-content: space-around; }
-.sheet-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; color: #444; }
-.sheet-icon { width: 48px; height: 48px; background: #f5f5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; }
-.sheet-item:hover .sheet-icon { background: #e0e0e0; }
-.sheet-item span { font-size: 11px; font-weight: 600; }
-.sheet-item.delete .sheet-icon { color: red; background: #fff0f0; }
+/* 5. Bottom Sheet (Overlay Animation) */
+.bottom-sheet-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 100; display: flex; align-items: flex-end; }
+.bottom-sheet { width: 100%; height: 85vh; background: white; border-radius: 20px 20px 0 0; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.2); }
 
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-             
+
+.sheet-header { padding: 10px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; border-bottom: 1px solid #f0f0f0; }
+.drag-pill { width: 40px; height: 4px; background: #ddd; border-radius: 4px; }
+.search-bar { width: 100%; background: #f4f6f8; padding: 10px; border-radius: 8px; display: flex; gap: 8px; align-items: center; }
+.search-bar input { border: none; background: transparent; outline: none; width: 100%; font-size: 14px; }
+
+.sheet-content { flex: 1; overflow-y: auto; padding: 20px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.grid-2 img { width: 100%; border-radius: 8px; border: 1px solid #eee; }
+
+.text-options { display: flex; flex-direction: column; gap: 10px; }
+.text-btn { padding: 15px; background: #eee; border: none; border-radius: 8px; text-align: left; font-weight: bold; }
+.text-btn.big { font-size: 24px; } .text-btn.small { font-size: 16px; font-weight: normal; }
+
+/* Context Menu */
+.action-menu-overlay { position: fixed; bottom: 70px; left: 0; right: 0; display: flex; justify-content: center; z-index: 90; }
+.action-menu { background: white; padding: 10px 20px; border-radius: 50px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); display: flex; gap: 20px; align-items: center; border: 1px solid #eee; }
+.menu-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.menu-item span { font-size: 20px; }
+.menu-item small { font-size: 9px; margin-top: 2px; }
+.menu-item.delete { color: red; }
+              
