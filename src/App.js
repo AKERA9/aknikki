@@ -3,12 +3,12 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Group, Text } fro
 import useImage from 'use-image';
 import './App.css';
 
-const FloatingMenu = ({ x, y, onDelete, onDuplicate }) => (
+const ObjectControl = ({ x, y, onDelete, onDuplicate }) => (
   <Group x={x} y={y - 50}>
-    <Rect width={100} height={32} fill="#ffffff" cornerRadius={6} shadowBlur={10} shadowOpacity={0.15} />
-    <Text text="🗑️" x={12} y={8} onClick={onDelete} cursor="pointer" />
-    <Text text="📑" x={42} y={8} onClick={onDuplicate} cursor="pointer" />
-    <Text text="•••" x={72} y={8} cursor="pointer" />
+    <Rect width={100} height={32} fill="white" cornerRadius={6} shadowBlur={10} shadowOpacity={0.15} />
+    <Text text="🗑️" x={12} y={10} onClick={onDelete} cursor="pointer" />
+    <Text text="📑" x={45} y={10} onClick={onDuplicate} cursor="pointer" />
+    <Text text="•••" x={75} y={10} cursor="pointer" />
   </Group>
 );
 
@@ -50,8 +50,8 @@ const RenderElement = ({ el, isSelected, onSelect, onChange, onDelete, onDuplica
       )}
       {isSelected && (
         <>
-          <Transformer ref={trRef} />
-          <FloatingMenu x={el.x} y={el.y} onDelete={onDelete} onDuplicate={onDuplicate} />
+          <Transformer ref={trRef} rotateEnabled={true} />
+          <ObjectControl x={el.x} y={el.y} onDelete={onDelete} onDuplicate={onDuplicate} />
         </>
       )}
     </React.Fragment>
@@ -87,16 +87,12 @@ export default function App() {
     }
   };
 
-  const filteredAssets = activePanel && assets[activePanel] 
-    ? assets[activePanel].filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())) 
-    : [];
-
   return (
     <div className="ak-pro-root">
       <header className="ak-header">
         <div className="ak-logo">Aknikki <span>Pro</span></div>
         <div className="header-right">
-          <select onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
+          <select className="ratio-select" onChange={(e) => setRatio(e.target.value === '16:9' ? {w:640,h:360} : {w:360,h:450})}>
             <option value="4:5">4:5 Insta</option>
             <option value="16:9">16:9 YT</option>
           </select>
@@ -117,17 +113,16 @@ export default function App() {
 
         <div className={`ak-panel ${activePanel ? 'open' : ''}`}>
           <div className="panel-top">
-            <input placeholder={`Search ${activePanel}...`} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-bar" />
+            <input placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="search-bar" />
             <button className="arrow-close" onClick={() => setActivePanel(null)}>❮</button>
           </div>
           <div className="asset-grid">
             {activePanel === 'Text' && (
               <div className="text-full-row">
                 <button onClick={() => addItem('Text', {content: 'Add Heading', fontSize: 35, fill: '#000'})} className="add-text-btn">Add Heading</button>
-                <button onClick={() => addItem('Text', {content: 'Add Body Text', fontSize: 20, fill: '#333'})} className="add-text-btn">Add Body Text</button>
               </div>
             )}
-            {filteredAssets.map(a => (
+            {assets[activePanel]?.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase())).map(a => (
               <img key={a.url} src={a.url} onClick={() => addItem(activePanel, {url: a.url})} alt="asset" />
             ))}
           </div>
@@ -153,7 +148,7 @@ export default function App() {
               </Layer>
             </Stage>
           </div>
-          <div className="zoom-bar">
+          <div className="zoom-bar-fixed">
             <input type="range" min="0.3" max="1.5" step="0.1" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} />
             <span>{Math.round(zoom * 100)}%</span>
           </div>
@@ -161,25 +156,27 @@ export default function App() {
       </div>
 
       <footer className="ak-timeline">
-        <div className="timeline-labels">
-          <div className="tl-head">Layers</div>
-          {elements.map((el, i) => (
-            <div key={el.id} className={`tl-label-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-              <div className="order-btns">
-                <button onClick={() => moveLayer(i, 1)}>▲</button>
-                <button onClick={() => moveLayer(i, -1)}>▼</button>
+        <div className="tl-container">
+          <div className="tl-labels">
+            <div className="tl-title">Layers</div>
+            {elements.map((el, i) => (
+              <div key={el.id} className={`tl-row-label ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
+                <div className="order-controls">
+                  <button onClick={(e) => {e.stopPropagation(); moveLayer(i, 1)}}>▲</button>
+                  <button onClick={(e) => {e.stopPropagation(); moveLayer(i, -1)}}>▼</button>
+                </div>
+                <span>{el.type}</span>
               </div>
-              <span>{el.type}</span>
-            </div>
-          ))}
-        </div>
-        <div className="timeline-tracks">
-          <div className="tl-head">Duration Control</div>
-          {elements.map(el => (
-            <div key={el.id} className={`track-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-              <div className="track-pill" style={{ width: el.duration * 30, left: el.start * 30 }}>{el.type}</div>
-            </div>
-          ))}
+            ))}
+          </div>
+          <div className="tl-tracks">
+            <div className="tl-title">Timeline</div>
+            {elements.map(el => (
+              <div key={el.id} className={`track-row ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
+                <div className="track-pill" style={{ width: el.duration * 30, left: el.start * 30 }}>{el.type}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </footer>
     </div>
