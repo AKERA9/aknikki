@@ -3,15 +3,29 @@ import { Stage, Layer, Image as KonvaImage, Rect, Transformer, Text } from 'reac
 import useImage from 'use-image';
 import './App.css';
 
-// Context Menu (Edit/Delete/Duplicate)
-const ActionMenu = ({ onClose, onDelete, onDuplicate, onLayerUp }) => (
-  <div className="action-menu-overlay" onClick={onClose}>
-    <div className="action-menu" onClick={(e) => e.stopPropagation()}>
+// Context Menu (Canva Style Bottom Popup)
+const ContextMenu = ({ onClose, onDelete, onDuplicate }) => (
+  <div className="context-menu-overlay" onClick={onClose}>
+    <div className="context-menu" onClick={e => e.stopPropagation()}>
       <div className="drag-handle"></div>
-      <div className="menu-grid">
-        <div className="menu-item" onClick={onDuplicate}><span>📑</span><small>Duplicate</small></div>
-        <div className="menu-item" onClick={onLayerUp}><span>🔼</span><small>Layer Up</small></div>
-        <div className="menu-item delete" onClick={onDelete}><span>🗑️</span><small>Delete</small></div>
+      <div className="menu-items-row">
+        <div className="c-item" onClick={onDuplicate}>
+          <div className="c-icon">📑</div>
+          <span>Copy</span>
+        </div>
+        <div className="c-item" onClick={onDuplicate}>
+          <div className="c-icon">📋</div>
+          <span>Paste</span>
+        </div>
+        <div className="c-item delete" onClick={onDelete}>
+          <div className="c-icon">🗑️</div>
+          <span>Delete</span>
+        </div>
+      </div>
+      <div className="menu-list">
+        <div className="list-item"><span>🔒</span> Lock Element</div>
+        <div className="list-item"><span>↕️</span> Layer Order</div>
+        <div className="list-item"><span>Transparency</span></div>
       </div>
     </div>
   </div>
@@ -59,7 +73,16 @@ const RenderElement = ({ el, isSelected, onSelect, onChange }) => {
           }}
         />
       )}
-      {isSelected && <Transformer ref={trRef} anchorSize={10} borderStroke="#8b3dff" />}
+      {isSelected && (
+        <Transformer 
+          ref={trRef} 
+          anchorSize={12} 
+          borderStroke="#7E22CE" 
+          anchorStroke="#7E22CE" 
+          anchorFill="#fff" 
+          borderDash={[4, 4]}
+        />
+      )}
     </React.Fragment>
   );
 };
@@ -67,43 +90,47 @@ const RenderElement = ({ el, isSelected, onSelect, onChange }) => {
 export default function App() {
   const [elements, setElements] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [activeTab, setActiveTab] = useState(null); // Controls Bottom Sheet
-  const [zoom, setZoom] = useState(0.6); // Default zoom for mobile view
+  const [activeTab, setActiveTab] = useState(null); 
+  const [zoom, setZoom] = useState(0.55); // Mobile fit
 
-  // Demo Assets
   const assets = {
     Elements: [
       { url: 'https://img.icons8.com/color/200/lion.png' },
       { url: 'https://img.icons8.com/fluency/200/business-man.png' },
       { url: 'https://img.icons8.com/color/200/robot-3.png' }
     ],
-    Uploads: [], // User uploads placeholder
   };
 
   const addItem = (type, data = {}) => {
     const newEl = type === 'Text' 
-      ? { id: `el-${Date.now()}`, type, content: 'Double Tap', x: 50, y: 150, fontSize: 40, fill: '#000', duration: 5 }
-      : { id: `el-${Date.now()}`, type, url: data.url, x: 50, y: 50, scaleX: 1, scaleY: 1, rotation: 0, duration: 5 };
+      ? { id: `el-${Date.now()}`, type, content: 'Add Text', x: 50, y: 150, fontSize: 40, fill: '#000' }
+      : { id: `el-${Date.now()}`, type, url: data.url, x: 50, y: 50, scaleX: 1, scaleY: 1, rotation: 0 };
     
     setElements([...elements, newEl]);
-    setActiveTab(null); // Close sheet after adding
+    setActiveTab(null);
   };
 
   return (
-    <div className="mobile-layout">
-      {/* 1. Header (Fixed Top) */}
-      <header className="mobile-header">
-        <div className="home-btn">🏠</div>
-        <div className="app-title">Aknikki</div>
-        <button className="export-pill">Export</button>
+    <div className="mobile-app">
+      {/* 1. Gradient Header */}
+      <header className="app-header">
+        <div className="header-left">
+          <div className="round-btn">🏠</div>
+          <div className="round-btn">↩</div>
+          <div className="round-btn">↪</div>
+        </div>
+        <div className="header-right">
+          <div className="round-btn">•••</div>
+          <button className="export-pill">⬆</button>
+        </div>
       </header>
 
-      {/* 2. Workspace (Middle Area) */}
-      <main className="mobile-workspace">
-        <div className="canvas-frame" style={{ transform: `scale(${zoom})` }}>
+      {/* 2. Workspace (Gray Background) */}
+      <main className="workspace">
+        <div className="canvas-shadow-box" style={{ transform: `scale(${zoom})` }}>
           <Stage width={360} height={640} onMouseDown={(e) => e.target === e.target.getStage() && setSelectedId(null)}>
             <Layer>
-              <Rect width={360} height={640} fill="#fff" shadowBlur={30} shadowOpacity={0.1} />
+              <Rect width={360} height={640} fill="#fff" />
               {elements.map((el, i) => (
                 <RenderElement 
                   key={el.id} el={el} isSelected={el.id === selectedId}
@@ -120,81 +147,94 @@ export default function App() {
         </div>
       </main>
 
-      {/* 3. Timeline (Above Menu) */}
-      <div className="mobile-timeline">
-        <div className="timeline-info">
-          <span>00:00</span>
-          <div className="play-circle">▶</div>
-          <button className="add-clip-btn">+</button>
-        </div>
-        <div className="timeline-scroller">
-          {elements.map(el => (
-            <div key={el.id} className={`clip-card ${el.id === selectedId ? 'active' : ''}`} onClick={() => setSelectedId(el.id)}>
-              <div className="clip-icon">{el.type === 'Text' ? 'T' : '🖼️'}</div>
-              <div className="clip-handle left"></div>
-              <div className="clip-handle right"></div>
-            </div>
-          ))}
+      {/* 3. Timeline Strip (Just above menu) */}
+      <div className="timeline-strip">
+        <div className="timer">0:00 <span className="play-triangle">▶</span> 0:05</div>
+        <div className="timeline-content">
+          <div className="timeline-add">+</div>
+          <div className="frame-thumb active">
+             <div className="thumb-content">Page 1</div>
+          </div>
+          <div className="frame-thumb">
+             <div className="thumb-content">Page 2</div>
+          </div>
         </div>
       </div>
 
-      {/* 4. Bottom Menu (Scrollable Navigation) */}
-      <nav className="bottom-nav">
-        <div className="nav-scroll-container">
-          {['Elements', 'Text', 'Uploads', 'Audio', 'Draw', 'Projects', 'Apps'].map(item => (
-            <div key={item} className={`nav-item ${activeTab === item ? 'active' : ''}`} onClick={() => setActiveTab(item)}>
-              <div className="nav-icon">
-                {item === 'Elements' ? '🎨' : item === 'Text' ? 'T' : item === 'Uploads' ? '☁️' : item === 'Audio' ? '🎵' : '✏️'}
-              </div>
-              <span>{item}</span>
-            </div>
-          ))}
+      {/* 4. Bottom Tab Bar (Fixed) */}
+      <nav className="bottom-tabs">
+        <div className="tab-item" onClick={() => setActiveTab('Design')}>
+           <div className="tab-icon">🎨</div>
+           <span>Design</span>
+        </div>
+        <div className="tab-item" onClick={() => setActiveTab('Elements')}>
+           <div className="tab-icon">❤️</div>
+           <span>Elements</span>
+        </div>
+        <div className="tab-item" onClick={() => setActiveTab('Text')}>
+           <div className="tab-icon">T</div>
+           <span>Text</span>
+        </div>
+        <div className="tab-item" onClick={() => setActiveTab('Gallery')}>
+           <div className="tab-icon">📷</div>
+           <span>Gallery</span>
+        </div>
+        <div className="tab-item" onClick={() => setActiveTab('Brand')}>
+           <div className="tab-icon">©️</div>
+           <span>Brand</span>
         </div>
       </nav>
 
-      {/* 5. Bottom Sheet (Overlay) */}
+      {/* 5. Bottom Sheet (Content Drawer) */}
       {activeTab && (
-        <div className="bottom-sheet-overlay" onClick={() => setActiveTab(null)}>
-          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-header">
-              <div className="drag-pill"></div>
-              <div className="search-bar">
-                <span>🔍</span>
-                <input placeholder={`Search ${activeTab}...`} autoFocus />
-              </div>
+        <div className="sheet-container">
+          <div className="sheet-backdrop" onClick={() => setActiveTab(null)}></div>
+          <div className="sheet-modal">
+            <div className="sheet-drag-handle"></div>
+            <div className="sheet-search">
+              <span>🔍</span>
+              <input placeholder={`Search ${activeTab}...`} autoFocus />
             </div>
             
-            <div className="sheet-content">
-              {activeTab === 'Text' && (
-                <div className="text-options">
-                  <button className="text-btn big" onClick={() => addItem('Text')}>Add Heading</button>
-                  <button className="text-btn small" onClick={() => addItem('Text')}>Add Body Text</button>
-                </div>
-              )}
+            <div className="sheet-body">
               {activeTab === 'Elements' && (
-                <div className="grid-2">
-                  {assets.Elements.map(a => <img key={a.url} src={a.url} onClick={() => addItem('Img', a)} alt="el"/>)}
+                <>
+                  <div className="section-title">Recently Used</div>
+                  <div className="grid-row">
+                    {assets.Elements.map(a => <img key={a.url} src={a.url} onClick={() => addItem('Img', a)} className="grid-item" alt="el"/>)}
+                  </div>
+                  <div className="section-title">Shapes</div>
+                  <div className="grid-row">
+                     <div className="shape-box circle" onClick={() => addItem('Text')}></div>
+                     <div className="shape-box square" onClick={() => addItem('Text')}></div>
+                     <div className="shape-box tri" onClick={() => addItem('Text')}></div>
+                  </div>
+                </>
+              )}
+              {activeTab === 'Text' && (
+                <div className="text-stack">
+                  <button className="add-heading-btn" onClick={() => addItem('Text')}>Add a heading</button>
+                  <button className="add-sub-btn" onClick={() => addItem('Text')}>Add a subheading</button>
+                  <button className="add-body-btn" onClick={() => addItem('Text')}>Add a little bit of body text</button>
                 </div>
               )}
-              {activeTab === 'Uploads' && <div className="upload-placeholder">Tap to upload media</div>}
             </div>
           </div>
         </div>
       )}
 
-      {/* 6. Context Menu (When Object Selected) */}
+      {/* 6. Context Menu Logic */}
       {selectedId && (
-        <ActionMenu 
-          onClose={() => setSelectedId(null)} 
+        <ContextMenu 
+          onClose={() => setSelectedId(null)}
           onDelete={() => { setElements(elements.filter(e => e.id !== selectedId)); setSelectedId(null); }}
           onDuplicate={() => {
-            const el = elements.find(e => e.id === selectedId);
-            setElements([...elements, {...el, id: `el-${Date.now()}`, x: el.x + 20}]);
+             const el = elements.find(e => e.id === selectedId);
+             setElements([...elements, { ...el, id: `el-${Date.now()}`, x: el.x + 20 }]);
           }}
-          onLayerUp={() => alert('Moved up')}
         />
       )}
     </div>
   );
-}
-  
+  }
+            
